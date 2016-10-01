@@ -149,7 +149,8 @@ class DaemonController extends \yii\console\Controller
         }
         foreach ($workers as $workerFileName) {
             $workerUid = str_replace('Worker.php', '', $workerFileName);
-            $worker = new $workerFileName();
+            $workerClass = str_replace('.php', '', $workerFileName);
+            $worker = new $workerClass();
             if (!$worker->active) {
                 continue;
             }
