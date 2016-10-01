@@ -6,14 +6,12 @@ Once runned stays in memory and launches workers.
 
 ### Install
 
-Add package to your project using composer:
-
+1. Add package to your project using composer:
 ```
 composer require inpassor/yii2-daemon
 ```
 
-Add the daemon command to console config file in "controllerMap" section:
-
+2. Add the daemon command to console config file in "controllerMap" section:
 ```
     'controllerMap' => [
         ...
@@ -23,9 +21,28 @@ Add the daemon command to console config file in "controllerMap" section:
     ],
 ```
 
-Create directory in your application root named "@app/daemon/daemon".
+3. Create directory in your application root named "@app/daemon/daemon".
 Notice that the daemon takes all the classes over this directory that
 names ends with "Worker.php" and have property "active" set to true.
+
+4. Create the daemon workers. All the workers classes should extend
+inpassor\daemon\DaemonWorker :
+```
+class MyWorker  extends inpassor\daemon\DaemonWorker
+{
+    public $active = true;
+    public $maxProcesses = 1;
+    public $delay = 60;
+    public $params = [];
+
+    public function run($params)
+    {
+        // The daemon worker's job goes here.
+        return $params;
+    }
+
+}
+```
 
 ### Run as system service for Ubuntu / Debian
 
