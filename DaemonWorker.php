@@ -41,7 +41,7 @@ class DaemonWorker  extends \yii\base\Object
      * Inside the method all echoed data will be written to the daemon log file.
      * If the method returns array, it will be stored and passed to the next execution of this method.
      */
-    public function run($params)
+    public function run($params = [])
     {
         return $params;
     }

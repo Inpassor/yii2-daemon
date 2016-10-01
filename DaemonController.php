@@ -149,7 +149,7 @@ class DaemonController extends \yii\console\Controller
         }
         foreach ($workers as $workerFileName) {
             $workerUid = str_replace('Worker.php', '', $workerFileName);
-            $workerClass = array_pop(explode('/', strtr($workerFileName, [
+            $workerClass = 'app\\daemon\\'. $this->uid. '\\' . array_pop(explode('/', strtr($workerFileName, [
                 '.php' => '',
                 '\\' => '/',
             ])));
