@@ -92,6 +92,9 @@ class DaemonController extends \yii\console\Controller
     protected function _getPid()
     {
         $this->_pidFile = $this->_filesDir . DIRECTORY_SEPARATOR . $this->uid . '.pid';
+        if (!file_exists($this->_pidFile)) {
+            return false;
+        }
         return (($this->_pid = file_get_contents($this->_pidFile)) && posix_kill($this->_pid, 0)) ? $this->_pid : false;
     }
 
