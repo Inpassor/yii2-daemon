@@ -1,7 +1,13 @@
 <?php
 /**
  * The daemon worker base class.
- * All the daemon workes should be extended of it.
+ *
+ * @author Inpassor <inpassor@yandex.com>
+ * @link https://github.com/Inpassor/yii2-daemon
+ *
+ * @version 0.1 (2016.10.01)
+ *
+ * All the daemon workes should extend this class.
  * The name of the daemon worker should start with the worker string UID and end with "Worker".
  */
 
@@ -9,6 +15,11 @@ namespace inpassor\daemon;
 
 class DaemonWorker  extends \yii\base\Object
 {
+
+    /**
+     * @var bool
+     */
+    public $active = true;
 
     /**
      * @var int The number of maximum processes of the daemon worker running at once.

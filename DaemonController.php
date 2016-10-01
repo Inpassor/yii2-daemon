@@ -1,4 +1,12 @@
 <?php
+/**
+ * The simple daemon extension for the Yii 2 framework
+ *
+ * @author Inpassor <inpassor@yandex.com>
+ * @link https://github.com/Inpassor/yii2-daemon
+ *
+ * @version 0.1 (2016.10.01)
+ */
 
 namespace inpassor\daemon;
 
@@ -12,7 +20,18 @@ declare(ticks = 1);
 class DaemonController extends \yii\console\Controller
 {
 
+    /**
+     * @var string the daemon UID. Givind daemons different UIDs makes possible to run several daemons.
+     * It is possible to set this parameter through command line:
+     * yii daemon --uid=<TheDaemonUID>
+     */
     public $uid = 'daemon';
+
+    /**
+     * @var string the daemon workers directory. Defaults to @app/daemon/<TheDaemonUID>
+     * It is possible to set this parameter through command line:
+     * yii daemon --workersdir=<path_to_workers>
+     */
     public $workersdir = null;
 
     protected $_pid = false;
@@ -128,6 +147,9 @@ class DaemonController extends \yii\console\Controller
         foreach ($workers as $workerFileName) {
             $workerUid = str_replace('Worker.php', '', $workerFileName);
             $worker = new $workerFileName();
+            if (!$worker->active) {
+                continue;
+            }
             $this->_workersData[$workerUid] = [
                 '_worker' => $worker,
                 '_pids' => [],
@@ -145,7 +167,7 @@ class DaemonController extends \yii\console\Controller
      */
     public function init()
     {
-        $this->_filesDir = Yii::getAlias('@runtime/' . $this->uid);
+        $this->_filesDir = Yii::getAlias('@runtime/daemon/' . $this->uid);
         if (!file_exists($this->_filesDir)) {
             FileHelper::createDirectory($this->_filesDir, 0755, true);
         }
