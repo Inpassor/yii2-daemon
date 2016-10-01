@@ -1,4 +1,2 @@
-Red Horror
-==========
-
-# Red Horror game server
+The simple daemon extension for the Yii framework
+=================================================
