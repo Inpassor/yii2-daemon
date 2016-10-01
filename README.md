@@ -1,17 +1,20 @@
 The simple daemon extension for the Yii 2 framework
 ===================================================
 
+Author: Inpassor <inpassor@yandex.com>
+Link: https://github.com/Inpassor/yii2-daemon
+
 This daemon is console application of Yii2.
 Once runned stays in memory and launches workers.
 
 ### Install
 
-1. Add package to your project using composer:
+1) Add package to your project using composer:
 ```
 composer require inpassor/yii2-daemon
 ```
 
-2. Add the daemon command to console config file in "controllerMap" section:
+2) Add the daemon command to console config file in "controllerMap" section:
 ```
     'controllerMap' => [
         ...
@@ -21,14 +24,14 @@ composer require inpassor/yii2-daemon
     ],
 ```
 
-3. Create directory in your application root named "@app/daemon/daemon".
+3) Create directory in your application root named "@app/daemon/daemon".
 Notice that the daemon takes all the classes over this directory that
 names ends with "Worker.php" and have property "active" set to true.
 
-4. Create the daemon workers. All the workers classes should extend
+4) Create the daemon workers. All the workers classes should extend
 inpassor\daemon\DaemonWorker :
 ```
-class MyWorker  extends inpassor\daemon\DaemonWorker
+class MyWorker extends inpassor\daemon\DaemonWorker
 {
     public $active = true;
     public $maxProcesses = 1;
@@ -46,17 +49,17 @@ class MyWorker  extends inpassor\daemon\DaemonWorker
 
 ### Run as system service for Ubuntu / Debian
 
-1. Make sure that you have "yii" console application launcher under your
+1) Make sure that you have "yii" console application launcher under your
 project directory. Check if "yii" file is executable.
 
-2. Make the file "vendor/inpassor/yii2-daemon/yiid" executable.
+2) Make the file "vendor/inpassor/yii2-daemon/yiid" executable.
 
-3. Run in root console:
+3) Run in root console:
 ```
 ln -s /path_to_your_project/vendor/inpassor/yii2-daemon/yiid /etc/init.d/yiid
 ```
 
-4. Create the file /lib/systemd/system/yiid.service :
+4) Create the file /lib/systemd/system/yiid.service :
 ```
 [Unit]
 Description=yiid
@@ -72,7 +75,7 @@ ExecStop=/path_to_your_project/vendor/inpassor/yii2-daemon/yiid stop
 WantedBy=multi-user.target
 ```
 
-5. Run in root console:
+5) Run in root console:
 ```
 systemctl enable yiid.service
 service yiid start
