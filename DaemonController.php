@@ -159,7 +159,7 @@ class DaemonController extends \yii\console\Controller
         }
         foreach ($workers as $workerFileName) {
             $workerUid = str_replace('Worker.php', '', $workerFileName);
-            $workerClass = 'app\\daemon\\' . $this->uid . '\\' . pathinfo($workerFileName, PATHINFO_FILENAME);
+            $workerClass = 'app\\daemon\\' . pathinfo($workerFileName, PATHINFO_FILENAME);
             $worker = new $workerClass();
             if (!$worker->active) {
                 continue;
