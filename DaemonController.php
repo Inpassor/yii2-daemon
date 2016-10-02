@@ -22,17 +22,18 @@ class DaemonController extends \yii\console\Controller
 
     /**
      * @var string the daemon UID. Givind daemons different UIDs makes possible to run several daemons.
-     * It is possible to set this parameter through command line:
-     * yii daemon --uid=<TheDaemonUID>
      */
     public $uid = 'daemon';
 
     /**
      * @var string the daemon workers directory. Defaults to @app/daemon/<TheDaemonUID>
-     * It is possible to set this parameter through command line:
-     * yii daemon --workersdir=<path_to_workers>
      */
     public $workersdir = null;
+
+    /**
+     * @var bool clear log file on start
+     */
+    public $clearlog = false;
 
     protected $_meetRequerements = false;
     protected $_pid = false;
@@ -158,6 +159,9 @@ class DaemonController extends \yii\console\Controller
         $this->_filesDir = Yii::getAlias('@runtime/daemon');
         $this->_logDir = Yii::getAlias('@runtime/logs');
         $this->_logFile = $this->_logDir . DIRECTORY_SEPARATOR . $this->uid . '.log';
+        if ($this->clearlog && file_exists($this->_logFile)) {
+            unlink($this->_logFile);
+        }
         if (!file_exists($this->_filesDir)) {
             FileHelper::createDirectory($this->_filesDir, 0755, true);
         }
