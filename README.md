@@ -7,12 +7,10 @@ Link: https://github.com/Inpassor/yii2-daemon
 This daemon is console application of Yii2.
 Once runned stays in memory and launches workers.
 Every worker process have individual number of processes running at once.
-All the echoed data inside workers put onto the daemon log file.
 
 Please note that for normal daemon work php extensions pcntl and posix
 are required. If running on Windows system no forking available.
-Also daemon main process stays in console until it break (Ctrl-C). All
-the echoed data inside workers outputs to console.
+Also daemon main process stays in console until it break (Ctrl-C).
 
 ### Install
 

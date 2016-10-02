@@ -39,13 +39,9 @@ class DaemonController extends \yii\console\Controller
     protected $_stop = false;
     protected $_workersData = [];
     protected $_filesDir = null;
-    protected $_pidFile = null;
     protected $_logDir = null;
     protected $_logFile = null;
-    protected $_errorLogFile = null;
-    protected $_stdin = null;
-    protected $_stdout = null;
-    protected $_stderr = null;
+    protected $_pidFile = null;
 
     /**
      * @param $signo
@@ -64,7 +60,7 @@ class DaemonController extends \yii\console\Controller
                 }
                 while ($pid > 0) {
                     foreach ($this->_workersData as $workerUid => $data) {
-                        if (($key = array_search($pid, $data['pids'])) !== false) {
+                        if (($key = array_search($pid, $data['_pids'])) !== false) {
                             unset($this->_workersData[$workerUid]['_pids'][$key]);
                         }
                     }
@@ -75,7 +71,7 @@ class DaemonController extends \yii\console\Controller
     }
 
     /**
-     * Logs one or several messages into log file.
+     * Logs one or several messages into daemon log file.
      * @param array|string $messages
      */
     protected function _log($messages)
@@ -84,12 +80,7 @@ class DaemonController extends \yii\console\Controller
             $messages = [$messages];
         }
         foreach ($messages as $message) {
-            $_message = date('d.m.Y H:i:s') . ' - ' . $message . PHP_EOL;
-            if ($this->_meetRequerements) {
-                echo $_message;
-            } else {
-                file_put_contents($this->_logFile, $_message . PHP_EOL);
-            }
+            file_put_contents($this->_logFile, date('d.m.Y H:i:s') . ' - ' . $message . PHP_EOL);
         }
     }
 
@@ -120,30 +111,6 @@ class DaemonController extends \yii\console\Controller
     }
 
     /**
-     * Redirects I/O streams to log files.
-     */
-    protected function _redirectIO()
-    {
-        if (defined('STDIN') && is_resource(STDIN)) {
-            fclose(STDIN);
-            $this->_stdin = fopen('/dev/null', 'r');
-        }
-
-        $this->_logFile = $this->_logDir . DIRECTORY_SEPARATOR . $this->uid . '.log';
-        if (defined('STDOUT') && is_resource(STDOUT)) {
-            fclose(STDOUT);
-            $this->_stdout = fopen($this->_logFile, 'wb');
-        }
-
-        $this->_errorLogFile = $this->_logDir . DIRECTORY_SEPARATOR . $this->uid . '_error.log';
-        ini_set('error_log', $this->_errorLogFile);
-        if (defined('STDERR') && is_resource(STDERR)) {
-            fclose(STDERR);
-            $this->_stderr = fopen($this->_errorLogFile, 'wb');
-        }
-    }
-
-    /**
      * Gets all the daemon workers and initializes them.
      * @return bool true on success, false on fail.
      */
@@ -164,7 +131,9 @@ class DaemonController extends \yii\console\Controller
         foreach ($workers as $workerFileName) {
             $workerUid = str_replace('Worker.php', '', $workerFileName);
             $workerClass = 'app\\daemon\\' . pathinfo($workerFileName, PATHINFO_FILENAME);
-            $worker = new $workerClass();
+            $worker = new $workerClass([
+                'logFile' => $this->_logFile,
+            ]);
             if (!$worker->active) {
                 continue;
             }
@@ -188,6 +157,7 @@ class DaemonController extends \yii\console\Controller
         $this->_meetRequerements = extension_loaded('pcntl') && extension_loaded('posix');
         $this->_filesDir = Yii::getAlias('@runtime/daemon');
         $this->_logDir = Yii::getAlias('@runtime/logs');
+        $this->_logFile = $this->_logDir . DIRECTORY_SEPARATOR . $this->uid . '.log';
         if (!file_exists($this->_filesDir)) {
             FileHelper::createDirectory($this->_filesDir, 0755, true);
         }
@@ -205,7 +175,6 @@ class DaemonController extends \yii\console\Controller
             if (!$this->_getWorkers()) {
                 $message .= 'No tasks found. Stopping!';
                 echo $message . PHP_EOL;
-                $this->_redirectIO();
                 $this->_log($message);
                 return 3;
             }
@@ -216,7 +185,6 @@ class DaemonController extends \yii\console\Controller
         } else {
             $message .= 'Service is already running!';
             echo $message . PHP_EOL;
-            $this->_redirectIO();
             $this->_log($message);
             return 0;
         }
@@ -225,7 +193,6 @@ class DaemonController extends \yii\console\Controller
         if ($this->_pid == -1) {
             $message .= 'Could not start service!';
             echo $message . PHP_EOL;
-            $this->_redirectIO();
             $this->_log($message);
             return 3;
         } elseif ($this->_pid) {
@@ -238,7 +205,6 @@ class DaemonController extends \yii\console\Controller
 
         $message .= 'OK.';
         echo $message . PHP_EOL;
-        $this->_redirectIO();
         $this->_log($message);
 
         while (!$this->_stop) {
@@ -287,7 +253,6 @@ class DaemonController extends \yii\console\Controller
             $result = 3;
         }
         echo $message . PHP_EOL;
-        $this->_redirectIO();
         $this->_log($message);
         return $result;
     }

@@ -13,7 +13,7 @@
 
 namespace inpassor\daemon;
 
-class DaemonWorker  extends \yii\base\Object
+class DaemonWorker extends \yii\base\Object
 {
 
     /**
@@ -36,9 +36,24 @@ class DaemonWorker  extends \yii\base\Object
      */
     public $params = [];
 
+    public $logFile = null;
+
+    /**
+     * Logs one or several messages into daemon log file.
+     * @param array|string $messages
+     */
+    public function log($messages)
+    {
+        if (!is_array($messages)) {
+            $messages = [$messages];
+        }
+        foreach ($messages as $message) {
+            file_put_contents($this->logFile, date('d.m.Y H:i:s') . ' - ' . $message . PHP_EOL);
+        }
+    }
+
     /**
      * The daemon worker main action. It should be overriden in a child class.
-     * Inside the method all echoed data will be written to the daemon log file.
      * If the method returns array, it will be stored and passed to the next execution of this method.
      */
     public function run($params = [])
