@@ -267,13 +267,11 @@ class DaemonController extends \yii\console\Controller
      */
     public function actionStatus()
     {
-        $message = 'Service status: ';
         if ($this->_getPid()) {
-            $message .= 'running.';
+            echo 'Service status: running.' . PHP_EOL;
             return 0;
         }
-        $message .= 'not running!';
-        echo $message . PHP_EOL;
+        echo 'Service status: not running!' . PHP_EOL;
         return 3;
     }
 
