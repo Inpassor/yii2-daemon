@@ -12,6 +12,7 @@ namespace inpassor\daemon;
 
 use Yii;
 use \yii\helpers\FileHelper;
+use \yii\helpers\Console;
 
 set_time_limit(0);
 ignore_user_abort(true);
@@ -34,6 +35,7 @@ class DaemonController extends \yii\console\Controller
      */
     public $workersdir = null;
 
+    protected $_meetRequerements = false;
     protected $_pid = false;
     protected $_stop = false;
     protected $_workersData = [];
@@ -81,7 +83,12 @@ class DaemonController extends \yii\console\Controller
             $messages = [$messages];
         }
         foreach ($messages as $message) {
-            echo date('d.m.Y H:i:s') . ' - ' . $message . PHP_EOL;
+            $_message = date('d.m.Y H:i:s') . ' - ' . $message;
+            if ($this->_meetRequerements) {
+                Console::output($_message);
+            } else {
+                file_put_contents($this->_logFile, $_message . PHP_EOL);
+            }
         }
     }
 
@@ -119,11 +126,9 @@ class DaemonController extends \yii\console\Controller
         $this->_logFile = $this->_filesDir . DIRECTORY_SEPARATOR . $this->uid . '.log';
         $this->_errorLogFile = $this->_filesDir . DIRECTORY_SEPARATOR . $this->uid . '_error.log';
         ini_set('error_log', $this->_errorLogFile);
-        if (defined('STDERR')) {
+        if ($this->_meetRequerements) {
             fclose(STDERR);
             $this->_stderr = fopen($this->_errorLogFile, 'a');
-        }
-        if (defined('STDOUT')) {
             fclose(STDOUT);
             $this->_stdout = fopen($this->_logFile, 'a');
         }
@@ -149,10 +154,7 @@ class DaemonController extends \yii\console\Controller
         }
         foreach ($workers as $workerFileName) {
             $workerUid = str_replace('Worker.php', '', $workerFileName);
-            $workerClass = 'app\\daemon\\'. $this->uid. '\\' . array_pop(explode('/', strtr($workerFileName, [
-                '.php' => '',
-                '\\' => '/',
-            ])));
+            $workerClass = 'app\\daemon\\' . $this->uid . '\\' . pathinfo($workerFileName, PATHINFO_FILENAME);
             $worker = new $workerClass();
             if (!$worker->active) {
                 continue;
@@ -174,6 +176,7 @@ class DaemonController extends \yii\console\Controller
      */
     public function init()
     {
+        $this->_meetRequerements = extension_loaded('pcntl') && extension_loaded('posix');
         $this->_filesDir = Yii::getAlias('@runtime/daemon/' . $this->uid);
         if (!file_exists($this->_filesDir)) {
             FileHelper::createDirectory($this->_filesDir, 0755, true);
@@ -191,25 +194,27 @@ class DaemonController extends \yii\console\Controller
         if ($this->_getPid() === false) {
             if (!$this->_getWorkers()) {
                 $message .= 'No tasks found. Stopping!';
-                echo $message . PHP_EOL;
+                Console::output($message);
                 $this->_redirectIO();
                 $this->_log($message);
                 return 3;
             }
-            pcntl_signal(SIGTERM, [$this, '_signalHandler']);
-            pcntl_signal(SIGCHLD, [$this, '_signalHandler']);
+            if ($this->_meetRequerements) {
+                pcntl_signal(SIGTERM, [$this, '_signalHandler']);
+                pcntl_signal(SIGCHLD, [$this, '_signalHandler']);
+            }
         } else {
             $message .= 'Service is already running!';
-            echo $message . PHP_EOL;
+            Console::output($message);
             $this->_redirectIO();
             $this->_log($message);
             return 0;
         }
 
-        $this->_pid = pcntl_fork();
+        $this->_pid = $this->_meetRequerements ? pcntl_fork() : 0;
         if ($this->_pid == -1) {
             $message .= 'Could not start service!';
-            echo $message . PHP_EOL;
+            Console::output($message);
             $this->_redirectIO();
             $this->_log($message);
             return 3;
@@ -217,10 +222,12 @@ class DaemonController extends \yii\console\Controller
             file_put_contents($this->_pidFile, $this->_pid);
             return 0;
         }
-        posix_setsid();
+        if ($this->_meetRequerements) {
+            posix_setsid();
+        }
 
         $message .= 'OK.';
-        echo $message . PHP_EOL;
+        Console::output($message);
         $this->_redirectIO();
         $this->_log($message);
 
@@ -228,13 +235,13 @@ class DaemonController extends \yii\console\Controller
             foreach ($this->_workersData as $workerUid => $data) {
                 if ($data['_tick'] % $data['delay'] === 0) {
                     $this->_workersData[$workerUid]['_tick'] = 0;
-                    $pid = pcntl_fork();
+                    $pid = $this->_meetRequerements ? pcntl_fork() : 0;
                     if ($pid == -1) {
                         $this->_log('Could not launch worker "' . $workerUid . '"');
                     } elseif ($pid) {
                         $this->_workersData[$workerUid]['_pids'][] = $pid;
                     } else {
-                        if (count($this->_workersData[$workerUid]['_pids']) >= $data['maxProcesses']) {
+                        if ($this->_meetRequerements && count($this->_workersData[$workerUid]['_pids']) >= $data['maxProcesses']) {
                             $this->_log('Max processes exceed for launch worker "' . $workerUid . '"');
                             return 0;
                         }
@@ -242,7 +249,9 @@ class DaemonController extends \yii\console\Controller
                         if (is_array($result) && $result) {
                             $this->_workersData[$workerUid]['params'] = $result;
                         }
-                        return 0;
+                        if ($this->_meetRequerements) {
+                            return 0;
+                        }
                     }
                 }
                 $this->_workersData[$workerUid]['_tick']++;
@@ -252,6 +261,10 @@ class DaemonController extends \yii\console\Controller
         return 0;
     }
 
+    /**
+     * The daemon stop command.
+     * @return int
+     */
     public function actionStop()
     {
         $message = 'Stopping service... ';
@@ -264,19 +277,25 @@ class DaemonController extends \yii\console\Controller
             $result = 3;
         }
 
-        echo $message . PHP_EOL;
+        Console::output($message);
         $this->_redirectIO();
         $this->_log($message);
         return $result;
     }
 
+    /**
+     * The daemon status command.
+     * @return int
+     */
     public function actionStatus()
     {
+        $message = 'Service status: ';
         if ($this->_getPid()) {
-            echo 'Service status: running.' . PHP_EOL;
+            $message .= 'running.';
             return 0;
         }
-        echo 'Service status: not running!' . PHP_EOL;
+        $message .= 'not running!';
+        Console::output($message);
         return 3;
     }
 

@@ -14,9 +14,7 @@
         }
     ],
     "require": {
-        "yiisoft/yii2": "*",
-        "ext-pcntl": "*",
-        "ext-posix": "*"
+        "yiisoft/yii2": "*"
     },
     "autoload": {
         "psr-4": {
