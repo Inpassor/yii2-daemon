@@ -31,7 +31,8 @@ composer require inpassor/yii2-daemon
     ],
 ```
 
-3) Create directory in your application root named "@app/daemon/daemon".
+3) Create directory in your application root named "@app/daemon"
+for daemon workers classes.
 Notice that the daemon takes all the classes over this directory that
 names ends with "Worker.php" and have property "active" set to true.
 
@@ -72,7 +73,7 @@ ln -s /path_to_your_project/vendor/inpassor/yii2-daemon/yiid /etc/init.d/yiid
 Description=yiid
  
 [Service]
-PIDFile=/path_to_your_project/runtime/daemon/daemon/daemon.pid
+PIDFile=/path_to_your_project/runtime/daemon/daemon.pid
 Type=forking
 KillMode=process
 ExecStart=/path_to_your_project/vendor/inpassor/yii2-daemon/yiid start

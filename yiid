@@ -1,8 +1,8 @@
 #!/usr/bin/env php
 <?php
 $_SERVER['argv'] = array_merge(
-    array_slice($_SERVER['argv'], 0, 1),
-    ['daemon'],
-    array_slice($_SERVER['argv'], 1)
+    $_SERVER['argv'][0],
+    ['daemon/' . $_SERVER['argv'][1]],
+    array_slice($_SERVER['argv'], 2)
 );
 require(__DIR__ . '/../../../yii');

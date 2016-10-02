@@ -41,6 +41,7 @@ class DaemonController extends \yii\console\Controller
     protected $_workersData = [];
     protected $_filesDir = null;
     protected $_pidFile = null;
+    protected $_logDir = null;
     protected $_logFile = null;
     protected $_errorLogFile = null;
     protected $_stdout = null;
@@ -123,8 +124,8 @@ class DaemonController extends \yii\console\Controller
      */
     protected function _redirectIO()
     {
-        $this->_logFile = $this->_filesDir . DIRECTORY_SEPARATOR . $this->uid . '.log';
-        $this->_errorLogFile = $this->_filesDir . DIRECTORY_SEPARATOR . $this->uid . '_error.log';
+        $this->_logFile = $this->_logDir . DIRECTORY_SEPARATOR . $this->uid . '.log';
+        $this->_errorLogFile = $this->_logDir . DIRECTORY_SEPARATOR . $this->uid . '_error.log';
         ini_set('error_log', $this->_errorLogFile);
         if ($this->_meetRequerements) {
             if (defined('STDERR')) {
@@ -145,7 +146,7 @@ class DaemonController extends \yii\console\Controller
     protected function _getWorkers()
     {
         if (!$this->workersdir) {
-            $this->workersdir = Yii::getAlias('@app/daemon/' . $this->uid);
+            $this->workersdir = Yii::getAlias('@app/daemon');
         }
         if (!file_exists($this->workersdir)) {
             return false;
@@ -181,7 +182,8 @@ class DaemonController extends \yii\console\Controller
     public function init()
     {
         $this->_meetRequerements = extension_loaded('pcntl') && extension_loaded('posix');
-        $this->_filesDir = Yii::getAlias('@runtime/daemon/' . $this->uid);
+        $this->_filesDir = Yii::getAlias('@runtime/daemon');
+        $this->_logDir = Yii::getAlias('@runtime/logs');
         if (!file_exists($this->_filesDir)) {
             FileHelper::createDirectory($this->_filesDir, 0755, true);
         }
