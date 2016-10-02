@@ -127,10 +127,14 @@ class DaemonController extends \yii\console\Controller
         $this->_errorLogFile = $this->_filesDir . DIRECTORY_SEPARATOR . $this->uid . '_error.log';
         ini_set('error_log', $this->_errorLogFile);
         if ($this->_meetRequerements) {
-            fclose(STDERR);
-            $this->_stderr = fopen($this->_errorLogFile, 'a');
-            fclose(STDOUT);
-            $this->_stdout = fopen($this->_logFile, 'a');
+            if (defined('STDERR')) {
+                fclose(STDERR);
+                $this->_stderr = fopen($this->_errorLogFile, 'a');
+            }
+            if (defined('STDOUT')) {
+                fclose(STDOUT);
+                $this->_stdout = fopen($this->_logFile, 'a');
+            }
         }
     }
 
