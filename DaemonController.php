@@ -81,7 +81,7 @@ class DaemonController extends \yii\console\Controller
             $messages = [$messages];
         }
         foreach ($messages as $message) {
-            file_put_contents($this->_logFile, date('d.m.Y H:i:s') . ' - ' . $message . PHP_EOL);
+            file_put_contents($this->_logFile, date('d.m.Y H:i:s') . ' - ' . $message . PHP_EOL, FILE_APPEND | LOCK_EX);
         }
     }
 
@@ -165,6 +165,30 @@ class DaemonController extends \yii\console\Controller
         if (!file_exists($this->_filesDir)) {
             FileHelper::createDirectory($this->_filesDir, 0755, true);
         }
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function options()
+    {
+        return [
+            'uid',
+            'workersdir',
+            'clearlog',
+        ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function optionAliases()
+    {
+        return [
+            'u' => 'uid',
+            'w' => 'workersdir',
+            'c' => 'clearlog',
+        ];
     }
 
     /**
