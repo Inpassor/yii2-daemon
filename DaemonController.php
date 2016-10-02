@@ -84,9 +84,9 @@ class DaemonController extends \yii\console\Controller
             $messages = [$messages];
         }
         foreach ($messages as $message) {
-            $_message = date('d.m.Y H:i:s') . ' - ' . $message;
+            $_message = date('d.m.Y H:i:s') . ' - ' . $message . PHP_EOL;
             if ($this->_meetRequerements) {
-                Console::output($_message);
+                echo $_message;
             } else {
                 file_put_contents($this->_logFile, $_message . PHP_EOL);
             }
@@ -200,7 +200,7 @@ class DaemonController extends \yii\console\Controller
         if ($this->_getPid() === false) {
             if (!$this->_getWorkers()) {
                 $message .= 'No tasks found. Stopping!';
-                Console::output($message);
+                echo $message . PHP_EOL;
                 $this->_redirectIO();
                 $this->_log($message);
                 return 3;
@@ -211,7 +211,7 @@ class DaemonController extends \yii\console\Controller
             }
         } else {
             $message .= 'Service is already running!';
-            Console::output($message);
+            echo $message . PHP_EOL;
             $this->_redirectIO();
             $this->_log($message);
             return 0;
@@ -220,7 +220,7 @@ class DaemonController extends \yii\console\Controller
         $this->_pid = $this->_meetRequerements ? pcntl_fork() : 0;
         if ($this->_pid == -1) {
             $message .= 'Could not start service!';
-            Console::output($message);
+            echo $message . PHP_EOL;
             $this->_redirectIO();
             $this->_log($message);
             return 3;
@@ -233,7 +233,7 @@ class DaemonController extends \yii\console\Controller
         }
 
         $message .= 'OK.';
-        Console::output($message);
+        echo $message . PHP_EOL;
         $this->_redirectIO();
         $this->_log($message);
 
@@ -282,8 +282,7 @@ class DaemonController extends \yii\console\Controller
             $message .= 'Service is not running!';
             $result = 3;
         }
-
-        Console::output($message);
+        echo $message . PHP_EOL;
         $this->_redirectIO();
         $this->_log($message);
         return $result;
@@ -301,7 +300,7 @@ class DaemonController extends \yii\console\Controller
             return 0;
         }
         $message .= 'not running!';
-        Console::output($message);
+        echo $message . PHP_EOL;
         return 3;
     }
 
