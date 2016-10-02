@@ -12,7 +12,6 @@ namespace inpassor\daemon;
 
 use Yii;
 use \yii\helpers\FileHelper;
-use \yii\helpers\Console;
 
 set_time_limit(0);
 ignore_user_abort(true);
@@ -44,6 +43,7 @@ class DaemonController extends \yii\console\Controller
     protected $_logDir = null;
     protected $_logFile = null;
     protected $_errorLogFile = null;
+    protected $_stdin = null;
     protected $_stdout = null;
     protected $_stderr = null;
 
@@ -124,18 +124,22 @@ class DaemonController extends \yii\console\Controller
      */
     protected function _redirectIO()
     {
+        if (defined('STDIN') && is_resource(STDIN)) {
+            fclose(STDIN);
+            $this->_stdin = fopen('/dev/null', 'r');
+        }
+
         $this->_logFile = $this->_logDir . DIRECTORY_SEPARATOR . $this->uid . '.log';
+        if (defined('STDOUT') && is_resource(STDOUT)) {
+            fclose(STDOUT);
+            $this->_stdout = fopen($this->_logFile, 'wb');
+        }
+
         $this->_errorLogFile = $this->_logDir . DIRECTORY_SEPARATOR . $this->uid . '_error.log';
         ini_set('error_log', $this->_errorLogFile);
-        if ($this->_meetRequerements) {
-            if (defined('STDERR') && is_resource(STDERR)) {
-                fclose(STDERR);
-                $this->_stderr = fopen($this->_errorLogFile, 'a');
-            }
-            if (defined('STDOUT') && is_resource(STDOUT)) {
-                fclose(STDOUT);
-                $this->_stdout = fopen($this->_logFile, 'a');
-            }
+        if (defined('STDERR') && is_resource(STDERR)) {
+            fclose(STDERR);
+            $this->_stderr = fopen($this->_errorLogFile, 'wb');
         }
     }
 
