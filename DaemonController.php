@@ -55,6 +55,9 @@ class DaemonController extends \yii\console\Controller
      */
     protected function _redirectIO()
     {
+        if (!$this->_meetRequerements) {
+            return;
+        }
         if (defined('STDIN') && is_resource(STDIN)) {
             fclose(STDIN);
             $this->stdin = fopen('/dev/null', 'r');
@@ -111,7 +114,12 @@ class DaemonController extends \yii\console\Controller
             $messages = [$messages];
         }
         foreach ($messages as $message) {
-            fwrite($this->stdout, date('d.m.Y H:i:s') . ' - ' . $message . PHP_EOL);
+            $_message = date('d.m.Y H:i:s') . ' - ' . $message . PHP_EOL;
+            if ($this->stdout && is_resource($this->stdout)) {
+                fwrite($this->stdout, $_message);
+            } else {
+                echo $_message;
+            }
         }
     }
 
