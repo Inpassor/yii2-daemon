@@ -21,17 +21,17 @@ class DaemonController extends \yii\console\Controller
 {
 
     /**
-     * @var string the daemon UID. Givind daemons different UIDs makes possible to run several daemons.
+     * @var string The daemon UID. Givind daemons different UIDs makes possible to run several daemons.
      */
     public $uid = 'daemon';
 
     /**
-     * @var string the daemon workers directory. Defaults to @app/daemon/<TheDaemonUID>
+     * @var string The daemon workers directory. Defaults to @app/daemon/<TheDaemonUID>
      */
     public $workersdir = null;
 
     /**
-     * @var bool clear log file on start
+     * @var bool Clear log file on start
      */
     public $clearlog = false;
 
@@ -42,7 +42,32 @@ class DaemonController extends \yii\console\Controller
     protected $_filesDir = null;
     protected $_logDir = null;
     protected $_logFile = null;
+    protected $_errorLogFile = null;
     protected $_pidFile = null;
+
+    protected $_stdin = null;
+    protected $_stdout = null;
+    protected $_stderr = null;
+
+    /**
+     * Redirects I/O sreams to the log files.
+     */
+    protected function _redirectIO()
+    {
+        if (defined('STDIN') && is_resource(STDIN)) {
+            fclose(STDIN);
+            $this->_stdin = fopen('/dev/null', 'r');
+        }
+        if (defined('STDOUT') && is_resource(STDOUT)) {
+            fclose(STDOUT);
+            $this->_stdout = fopen($this->_logFile, 'a');
+        }
+        if (defined('STDERR') && is_resource(STDERR)) {
+            ini_set('error_log', $this->_errorLogFile);
+            fclose(STDERR);
+            $this->_stderr = fopen($this->_errorLogFile, 'a');
+        }
+    }
 
     /**
      * @param $signo
@@ -53,7 +78,11 @@ class DaemonController extends \yii\console\Controller
     {
         switch ($signo) {
             case SIGTERM:
+            case SIGINT:
                 $this->_stop = true;
+                break;
+            case SIGHUP:
+                // restart, not implemented yet
                 break;
             case SIGCHLD:
                 if (!$pid) {
@@ -81,7 +110,7 @@ class DaemonController extends \yii\console\Controller
             $messages = [$messages];
         }
         foreach ($messages as $message) {
-            file_put_contents($this->_logFile, date('d.m.Y H:i:s') . ' - ' . $message . PHP_EOL, FILE_APPEND | LOCK_EX);
+            fwrite($this->_stdout, date('d.m.Y H:i:s') . ' - ' . $message . PHP_EOL);
         }
     }
 
@@ -133,7 +162,7 @@ class DaemonController extends \yii\console\Controller
             $workerUid = str_replace('Worker.php', '', $workerFileName);
             $workerClass = 'app\\daemon\\' . pathinfo($workerFileName, PATHINFO_FILENAME);
             $worker = new $workerClass([
-                'logFile' => $this->_logFile,
+                'stdout' => $this->_stdout,
             ]);
             if (!$worker->active) {
                 continue;
@@ -159,6 +188,7 @@ class DaemonController extends \yii\console\Controller
         $this->_filesDir = Yii::getAlias('@runtime/daemon');
         $this->_logDir = Yii::getAlias('@runtime/logs');
         $this->_logFile = $this->_logDir . DIRECTORY_SEPARATOR . $this->uid . '.log';
+        $this->_errorLogFile = $this->_logDir . DIRECTORY_SEPARATOR . $this->uid . '_error.log';
         if ($this->clearlog && file_exists($this->_logFile)) {
             unlink($this->_logFile);
         }
@@ -170,7 +200,7 @@ class DaemonController extends \yii\console\Controller
     /**
      * @inheritdoc
      */
-    public function options()
+    public function options($actionID)
     {
         return [
             'uid',
@@ -203,29 +233,34 @@ class DaemonController extends \yii\console\Controller
             if (!$this->_getWorkers()) {
                 $message .= 'No tasks found. Stopping!';
                 echo $message . PHP_EOL;
+                $this->_redirectIO();
                 $this->_log($message);
-                return 3;
+                return self::EXIT_CODE_ERROR;
             }
             if ($this->_meetRequerements) {
                 pcntl_signal(SIGTERM, [$this, '_signalHandler']);
+                pcntl_signal(SIGINT, [$this, '_signalHandler']);
+                pcntl_signal(SIGHUP, [$this, '_signalHandler']);
                 pcntl_signal(SIGCHLD, [$this, '_signalHandler']);
             }
         } else {
             $message .= 'Service is already running!';
             echo $message . PHP_EOL;
+            $this->_redirectIO();
             $this->_log($message);
-            return 0;
+            return self::EXIT_CODE_NORMAL;
         }
 
         $this->_pid = $this->_meetRequerements ? pcntl_fork() : 0;
         if ($this->_pid == -1) {
             $message .= 'Could not start service!';
             echo $message . PHP_EOL;
+            $this->_redirectIO();
             $this->_log($message);
-            return 3;
+            return self::EXIT_CODE_ERROR;
         } elseif ($this->_pid) {
             file_put_contents($this->_pidFile, $this->_pid);
-            return 0;
+            return self::EXIT_CODE_NORMAL;
         }
         if ($this->_meetRequerements) {
             posix_setsid();
@@ -233,6 +268,7 @@ class DaemonController extends \yii\console\Controller
 
         $message .= 'OK.';
         echo $message . PHP_EOL;
+        $this->_redirectIO();
         $this->_log($message);
 
         while (!$this->_stop) {
@@ -247,14 +283,14 @@ class DaemonController extends \yii\console\Controller
                     } else {
                         if ($this->_meetRequerements && count($this->_workersData[$workerUid]['_pids']) >= $data['maxProcesses']) {
                             $this->_log('Max processes exceed for launch worker "' . $workerUid . '"');
-                            return 0;
+                            return self::EXIT_CODE_NORMAL;
                         }
                         $result = $data['_worker']->run($data['params']);
                         if (is_array($result) && $result) {
                             $this->_workersData[$workerUid]['params'] = $result;
                         }
                         if ($this->_meetRequerements) {
-                            return 0;
+                            return self::EXIT_CODE_NORMAL;
                         }
                     }
                 }
@@ -262,7 +298,7 @@ class DaemonController extends \yii\console\Controller
             }
             sleep(1);
         }
-        return 0;
+        return self::EXIT_CODE_NORMAL;
     }
 
     /**
@@ -272,15 +308,16 @@ class DaemonController extends \yii\console\Controller
     public function actionStop()
     {
         $message = 'Stopping service... ';
-        $result = 0;
+        $result = self::EXIT_CODE_NORMAL;
         if ($this->_getPid() !== false) {
             $this->_killPid();
             $message .= 'OK.';
         } else {
             $message .= 'Service is not running!';
-            $result = 3;
+            $result = self::EXIT_CODE_ERROR;
         }
         echo $message . PHP_EOL;
+        $this->_redirectIO();
         $this->_log($message);
         return $result;
     }
@@ -293,10 +330,10 @@ class DaemonController extends \yii\console\Controller
     {
         if ($this->_getPid()) {
             echo 'Service status: running.' . PHP_EOL;
-            return 0;
+            return self::EXIT_CODE_NORMAL;
         }
         echo 'Service status: not running!' . PHP_EOL;
-        return 3;
+        return self::EXIT_CODE_ERROR;
     }
 
 }

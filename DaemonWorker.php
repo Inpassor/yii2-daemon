@@ -36,7 +36,7 @@ class DaemonWorker extends \yii\base\Object
      */
     public $params = [];
 
-    public $logFile = null;
+    public $stdout = null;
 
     /**
      * Logs one or several messages into daemon log file.
@@ -48,7 +48,7 @@ class DaemonWorker extends \yii\base\Object
             $messages = [$messages];
         }
         foreach ($messages as $message) {
-            file_put_contents($this->logFile, date('d.m.Y H:i:s') . ' - ' . $message . PHP_EOL, FILE_APPEND | LOCK_EX);
+            fwrite($this->_stdout, date('d.m.Y H:i:s') . ' - ' . $message . PHP_EOL);
         }
     }
 

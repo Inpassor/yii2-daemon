@@ -19,6 +19,17 @@ Also daemon main process stays in console until it break (Ctrl-C).
 composer require inpassor/yii2-daemon
 ```
 
+If package installation fails with message
+```
+[InvalidArgumentException]
+Could not find package inpassor/yii2-daemon at any version for your minimum-stability (stable). Check the package spelling or your minimum-stability
+```
+add following parameters to your composer.json file (or change existant):
+```
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+```
+
 2) Add the daemon command to console config file in "controllerMap" section:
 ```
     'controllerMap' => [
@@ -33,6 +44,8 @@ composer require inpassor/yii2-daemon
 for daemon workers classes.
 Notice that the daemon takes all the classes over this directory that
 names ends with "Worker.php" and have property "active" set to true.
+Workers are loaded during daemon start. So if you add one more worker,
+daemon should be restarted to run this worker.
 
 4) Create the daemon workers. All the workers classes should extend
 inpassor\daemon\DaemonWorker :
