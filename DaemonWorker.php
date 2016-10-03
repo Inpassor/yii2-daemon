@@ -49,7 +49,12 @@ class DaemonWorker extends \yii\base\Object
             $messages = [$messages];
         }
         foreach ($messages as $message) {
-            fwrite($this->daemon->stdout, date('d.m.Y H:i:s') . ' - ' . $message . PHP_EOL);
+            $_message = date('d.m.Y H:i:s') . ' - ' . $message . PHP_EOL;
+            if ($this->daemon->stdout && is_resource($this->daemon->stdout)) {
+                fwrite($this->daemon->stdout, $_message);
+            } else {
+                echo $_message;
+            }
         }
     }
 
