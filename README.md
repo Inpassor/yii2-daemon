@@ -55,12 +55,10 @@ class MyWorker extends inpassor\daemon\DaemonWorker
     public $active = true;
     public $maxProcesses = 1;
     public $delay = 60;
-    public $params = [];
 
-    public function run($params)
+    public function run()
     {
         // The daemon worker's job goes here.
-        return $params;
     }
 
 }

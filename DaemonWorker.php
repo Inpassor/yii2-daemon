@@ -32,11 +32,12 @@ class DaemonWorker extends \yii\base\Object
     public $delay = 60;
 
     /**
-     * @var array params to be passed to run method of the daemon worker.
+     * @var \inpassor\daemon\DaemonController
      */
-    public $params = [];
-
-    public $stdout = null;
+    public $daemon = null;
+    public $uid = '';
+    public $pids = [];
+    public $tick = 1;
 
     /**
      * Logs one or several messages into daemon log file.
@@ -48,17 +49,15 @@ class DaemonWorker extends \yii\base\Object
             $messages = [$messages];
         }
         foreach ($messages as $message) {
-            fwrite($this->_stdout, date('d.m.Y H:i:s') . ' - ' . $message . PHP_EOL);
+            fwrite($this->daemon->stdout, date('d.m.Y H:i:s') . ' - ' . $message . PHP_EOL);
         }
     }
 
     /**
      * The daemon worker main action. It should be overriden in a child class.
-     * If the method returns array, it will be stored and passed to the next execution of this method.
      */
-    public function run($params = [])
+    public function run()
     {
-        return $params;
     }
 
 }

@@ -35,19 +35,20 @@ class DaemonController extends \yii\console\Controller
      */
     public $clearlog = false;
 
+    public $stdin = null;
+    public $stdout = null;
+    public $stderr = null;
+
+    public $workers = [];
+
     protected $_meetRequerements = false;
     protected $_pid = false;
     protected $_stop = false;
-    protected $_workersData = [];
     protected $_filesDir = null;
     protected $_logDir = null;
     protected $_logFile = null;
     protected $_errorLogFile = null;
     protected $_pidFile = null;
-
-    protected $_stdin = null;
-    protected $_stdout = null;
-    protected $_stderr = null;
 
     /**
      * Redirects I/O sreams to the log files.
@@ -56,16 +57,16 @@ class DaemonController extends \yii\console\Controller
     {
         if (defined('STDIN') && is_resource(STDIN)) {
             fclose(STDIN);
-            $this->_stdin = fopen('/dev/null', 'r');
+            $this->stdin = fopen('/dev/null', 'r');
         }
         if (defined('STDOUT') && is_resource(STDOUT)) {
             fclose(STDOUT);
-            $this->_stdout = fopen($this->_logFile, 'a');
+            $this->stdout = fopen($this->_logFile, 'a');
         }
         if (defined('STDERR') && is_resource(STDERR)) {
             ini_set('error_log', $this->_errorLogFile);
             fclose(STDERR);
-            $this->_stderr = fopen($this->_errorLogFile, 'a');
+            $this->stderr = fopen($this->_errorLogFile, 'a');
         }
     }
 
@@ -89,9 +90,9 @@ class DaemonController extends \yii\console\Controller
                     $pid = pcntl_waitpid(-1, $status, WNOHANG);
                 }
                 while ($pid > 0) {
-                    foreach ($this->_workersData as $workerUid => $data) {
-                        if (($key = array_search($pid, $data['_pids'])) !== false) {
-                            unset($this->_workersData[$workerUid]['_pids'][$key]);
+                    foreach ($this->workers as $workerUid => $worker) {
+                        if (($key = array_search($pid, $worker->pids)) !== false) {
+                            unset($worker->pids[$key]);
                         }
                     }
                     $pid = pcntl_waitpid(-1, $status, WNOHANG);
@@ -110,7 +111,7 @@ class DaemonController extends \yii\console\Controller
             $messages = [$messages];
         }
         foreach ($messages as $message) {
-            fwrite($this->_stdout, date('d.m.Y H:i:s') . ' - ' . $message . PHP_EOL);
+            fwrite($this->stdout, date('d.m.Y H:i:s') . ' - ' . $message . PHP_EOL);
         }
     }
 
@@ -162,19 +163,13 @@ class DaemonController extends \yii\console\Controller
             $workerUid = str_replace('Worker.php', '', $workerFileName);
             $workerClass = 'app\\daemon\\' . pathinfo($workerFileName, PATHINFO_FILENAME);
             $worker = new $workerClass([
-                'stdout' => $this->_stdout,
+                'daemon' => $this,
+                'uid' => $workerUid,
             ]);
             if (!$worker->active) {
                 continue;
             }
-            $this->_workersData[$workerUid] = [
-                '_worker' => $worker,
-                '_pids' => [],
-                '_tick' => 1,
-                'maxProcesses' => $worker->maxProcesses,
-                'delay' => $worker->delay,
-                'params' => $worker->params,
-            ];
+            $this->workers[$workerUid] = $worker;
         }
         return true;
     }
@@ -187,14 +182,25 @@ class DaemonController extends \yii\console\Controller
         $this->_meetRequerements = extension_loaded('pcntl') && extension_loaded('posix');
         $this->_filesDir = Yii::getAlias('@runtime/daemon');
         $this->_logDir = Yii::getAlias('@runtime/logs');
+        if (!file_exists($this->_filesDir)) {
+            FileHelper::createDirectory($this->_filesDir, 0755, true);
+        }
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function beforeAction($action)
+    {
+        if (!parent::beforeAction($action)) {
+            return false;
+        }
         $this->_logFile = $this->_logDir . DIRECTORY_SEPARATOR . $this->uid . '.log';
         $this->_errorLogFile = $this->_logDir . DIRECTORY_SEPARATOR . $this->uid . '_error.log';
         if ($this->clearlog && file_exists($this->_logFile)) {
             unlink($this->_logFile);
         }
-        if (!file_exists($this->_filesDir)) {
-            FileHelper::createDirectory($this->_filesDir, 0755, true);
-        }
+        return true;
     }
 
     /**
@@ -272,29 +278,29 @@ class DaemonController extends \yii\console\Controller
         $this->_log($message);
 
         while (!$this->_stop) {
-            foreach ($this->_workersData as $workerUid => $data) {
-                if ($data['_tick'] % $data['delay'] === 0) {
-                    $this->_workersData[$workerUid]['_tick'] = 0;
-                    $pid = $this->_meetRequerements ? pcntl_fork() : 0;
+            foreach ($this->workers as $workerUid => $worker) {
+                if ($worker->tick % $worker->delay === 0) {
+                    $worker->tick = 0;
+                    $pid = 0;
+                    if ($this->_meetRequerements) {
+                        $pid = pcntl_fork();
+                    }
                     if ($pid == -1) {
                         $this->_log('Could not launch worker "' . $workerUid . '"');
                     } elseif ($pid) {
-                        $this->_workersData[$workerUid]['_pids'][] = $pid;
+                        $worker->pids[] = $pid;
                     } else {
-                        if ($this->_meetRequerements && count($this->_workersData[$workerUid]['_pids']) >= $data['maxProcesses']) {
+                        if ($this->_meetRequerements && count($worker->pids) >= $worker->maxProcesses) {
                             $this->_log('Max processes exceed for launch worker "' . $workerUid . '"');
                             return self::EXIT_CODE_NORMAL;
                         }
-                        $result = $data['_worker']->run($data['params']);
-                        if (is_array($result) && $result) {
-                            $this->_workersData[$workerUid]['params'] = $result;
-                        }
+                        $worker->run();
                         if ($this->_meetRequerements) {
                             return self::EXIT_CODE_NORMAL;
                         }
                     }
                 }
-                $this->_workersData[$workerUid]['_tick']++;
+                $worker->tick++;
             }
             sleep(1);
         }
