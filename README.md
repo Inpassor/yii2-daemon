@@ -2,6 +2,7 @@ The simple daemon extension for the Yii 2 framework
 ===================================================
 
 Author: Inpassor <inpassor@yandex.com>
+
 Link: https://github.com/Inpassor/yii2-daemon
 
 This daemon is console application of Yii2.
