@@ -20,22 +20,5 @@
         "psr-4": {
             "inpassor\\daemon\\": ""
         }
-    },
-    "scripts": {
-        "post-package-install": [
-            "inpassor\\daemon\\Installer::postCreate"
-        ]
-    },
-    "extra": {
-        "inpassor\\daemon\\Installer::postCreate": {
-            "createPaths": [
-                "@app/daemon"
-            ],
-            "setPermission": [
-                {
-                    "yiid": "0755"
-                }
-            ]
-        }
     }
 }

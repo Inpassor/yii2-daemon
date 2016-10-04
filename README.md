@@ -40,7 +40,7 @@ add following parameters to your composer.json file (or change existant):
     ],
 ```
 
-3) Use directory in your application root named "@app/daemon"
+3) Create directory in your application root named "@app/daemon"
 for daemon workers classes.
 Notice that the daemon takes all the classes over this directory that
 names ends with "Worker.php" and have property "active" set to true.
@@ -69,7 +69,7 @@ class MyWorker extends inpassor\daemon\DaemonWorker
 1) Make sure that you have "yii" console application launcher under your
 project directory. Check if "yii" file is executable.
 
-2) Make the file "vendor/inpassor/yii2-daemon/yiid" executable.
+2) Check if "vendor/inpassor/yii2-daemon/yiid" file is executable.
 
 3) Run in root console:
 ```

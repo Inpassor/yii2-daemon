@@ -1,5 +1,7 @@
 <?php
 /**
+ * This file is part of The simple daemon extension for the Yii 2 framework
+ *
  * The daemon worker base class.
  *
  * @author Inpassor <inpassor@yandex.com>
