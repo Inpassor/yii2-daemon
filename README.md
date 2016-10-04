@@ -40,7 +40,7 @@ add following parameters to your composer.json file (or change existant):
     ],
 ```
 
-3) Create directory in your application root named "@app/daemon"
+3) Use directory in your application root named "@app/daemon"
 for daemon workers classes.
 Notice that the daemon takes all the classes over this directory that
 names ends with "Worker.php" and have property "active" set to true.

@@ -21,6 +21,11 @@
             "inpassor\\daemon\\": ""
         }
     },
+    "scripts": {
+        "post-package-install": [
+            "inpassor\\daemon\\Installer::postCreate"
+        ]
+    },
     "extra": {
         "inpassor\\daemon\\Installer::postCreate": {
             "createPaths": [
