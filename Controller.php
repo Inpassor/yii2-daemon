@@ -287,7 +287,7 @@ class Controller extends \yii\console\Controller
         while (!self::$_stop) {
             foreach (self::$_workers as $workerUid => $workerData) {
                 if ($workerData['tick'] >= $workerData['delay']) {
-                    $workerData['tick'] = 0;
+                    self::$_workers[$workerUid]['tick'] = 0;
                     $pid = 0;
                     if ($this->_meetRequerements) {
                         $pid = (count($workerData['pids']) < $workerData['maxProcesses']) ? pcntl_fork() : -2;
