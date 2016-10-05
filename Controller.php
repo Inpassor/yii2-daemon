@@ -16,7 +16,7 @@ set_time_limit(0);
 ignore_user_abort(true);
 declare(ticks = 1);
 
-class DaemonController extends \yii\console\Controller
+class Controller extends \yii\console\Controller
 {
 
     /**
@@ -38,10 +38,11 @@ class DaemonController extends \yii\console\Controller
     public $stdout = null;
     public $stderr = null;
 
-    protected $_workers = [];
+    protected static $_stop = false;
+    protected static $_workers = [];
+
     protected $_meetRequerements = false;
     protected $_pid = false;
-    protected $_stop = false;
     protected $_filesDir = null;
     protected $_logDir = null;
     protected $_logFile = null;
@@ -72,28 +73,26 @@ class DaemonController extends \yii\console\Controller
     }
 
     /**
+     * PNCTL signal handler.
      * @param $signo
      * @param $pid
      * @param $status
      */
-    protected function _signalHandler($signo, $pid = null, $status = null)
+    protected static function _signalHandler($signo, $pid = null, $status = null)
     {
         switch ($signo) {
             case SIGTERM:
             case SIGINT:
-                $this->_stop = true;
-                break;
-            case SIGHUP:
-                // restart, not implemented yet
+                self::$_stop = true;
                 break;
             case SIGCHLD:
                 if (!$pid) {
                     $pid = pcntl_waitpid(-1, $status, WNOHANG);
                 }
                 while ($pid > 0) {
-                    foreach ($this->_workers as $workerUid => $workerData) {
+                    foreach (self::$_workers as $workerUid => $workerData) {
                         if (($key = array_search($pid, $workerData['pids'])) !== false) {
-                            unset($this->_workers[$workerUid]['pids'][$key]);
+                            unset(self::$_workers[$workerUid]['pids'][$key]);
                         }
                     }
                     $pid = pcntl_waitpid(-1, $status, WNOHANG);
@@ -172,7 +171,7 @@ class DaemonController extends \yii\console\Controller
             if (!$worker->active) {
                 continue;
             }
-            $this->_workers[$workerUid] = [
+            self::$_workers[$workerUid] = [
                 'class' => $workerClass,
                 'maxProcesses' => $worker->maxProcesses,
                 'delay' => $worker->delay,
@@ -253,10 +252,9 @@ class DaemonController extends \yii\console\Controller
                 return self::EXIT_CODE_ERROR;
             }
             if ($this->_meetRequerements) {
-                pcntl_signal(SIGTERM, [$this, '_signalHandler']);
-                pcntl_signal(SIGINT, [$this, '_signalHandler']);
-                pcntl_signal(SIGHUP, [$this, '_signalHandler']);
-                pcntl_signal(SIGCHLD, [$this, '_signalHandler']);
+                pcntl_signal(SIGTERM, ['inpassor\daemon\Controller', '_signalHandler']);
+                pcntl_signal(SIGINT, ['inpassor\daemon\Controller', '_signalHandler']);
+                pcntl_signal(SIGCHLD, ['inpassor\daemon\Controller', '_signalHandler']);
             }
         } else {
             $message .= 'Service is already running!';
@@ -286,8 +284,8 @@ class DaemonController extends \yii\console\Controller
         $this->_redirectIO();
         $this->_log($message);
 
-        while (!$this->_stop) {
-            foreach ($this->_workers as $workerUid => $workerData) {
+        while (!self::$_stop) {
+            foreach (self::$_workers as $workerUid => $workerData) {
                 if ($workerData['tick'] % $workerData['delay'] === 0) {
                     $workerData['tick'] = 0;
                     $pid = 0;
@@ -299,11 +297,13 @@ class DaemonController extends \yii\console\Controller
                     } elseif ($pid == -2) {
                         $this->_log('Max processes exceed for launch worker "' . $workerUid . '"');
                     } elseif ($pid) {
-                        $this->_workers[$workerUid]['pids'][] = $pid;
+                        self::$_workers[$workerUid]['pids'][] = $pid;
                     } else {
                         $worker = new $workerData['class']([
-                            'daemon' => $this,
                             'uid' => $workerUid,
+                            'meetRequerements' => $this->_meetRequerements,
+                            'logFile' => $this->_logFile,
+                            'errorLogFile' => $this->_errorLogFile,
                         ]);
                         $worker->run();
                         if ($this->_meetRequerements) {
@@ -311,7 +311,7 @@ class DaemonController extends \yii\console\Controller
                         }
                     }
                 }
-                $this->_workers[$workerUid]['tick']++;
+                self::$_workers[$workerUid]['tick']++;
             }
             sleep(1);
         }

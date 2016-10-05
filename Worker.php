@@ -15,7 +15,7 @@
 
 namespace inpassor\daemon;
 
-class DaemonWorker extends \yii\base\Object
+class Worker extends \yii\base\Object
 {
 
     /**
@@ -33,11 +33,36 @@ class DaemonWorker extends \yii\base\Object
      */
     public $delay = 60;
 
-    /**
-     * @var \inpassor\daemon\DaemonController
-     */
-    public $daemon = null;
+    public $meetRequerements = false;
     public $uid = '';
+    public $stdin = null;
+    public $stdout = null;
+    public $stderr = null;
+    public $logFile = '';
+    public $errorLogFile = '';
+
+    /**
+     * Redirects I/O sreams to the log files.
+     */
+    protected function _redirectIO()
+    {
+        if (!$this->meetRequerements) {
+            return;
+        }
+        if (defined('STDIN') && is_resource(STDIN)) {
+            fclose(STDIN);
+            $this->stdin = fopen('/dev/null', 'r');
+        }
+        if (defined('STDOUT') && is_resource(STDOUT)) {
+            fclose(STDOUT);
+            $this->stdout = fopen($this->logFile, 'a');
+        }
+        if (defined('STDERR') && is_resource(STDERR)) {
+            ini_set('error_log', $this->errorLogFile);
+            fclose(STDERR);
+            $this->stderr = fopen($this->errorLogFile, 'a');
+        }
+    }
 
     /**
      * Logs one or several messages into daemon log file.
@@ -50,8 +75,8 @@ class DaemonWorker extends \yii\base\Object
         }
         foreach ($messages as $message) {
             $_message = date('d.m.Y H:i:s') . ' - ' . $message . PHP_EOL;
-            if ($this->daemon->stdout && is_resource($this->daemon->stdout)) {
-                fwrite($this->daemon->stdout, $_message);
+            if ($this->stdout && is_resource($this->stdout)) {
+                fwrite($this->stdout, $_message);
             } else {
                 echo $_message;
             }
@@ -63,6 +88,15 @@ class DaemonWorker extends \yii\base\Object
      */
     public function run()
     {
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function __construct($config = [])
+    {
+        $this->_redirectIO();
+        parent::init();
     }
 
 }
