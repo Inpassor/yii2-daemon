@@ -73,35 +73,6 @@ class Controller extends \yii\console\Controller
     }
 
     /**
-     * PNCTL signal handler.
-     * @param $signo
-     * @param $pid
-     * @param $status
-     */
-    protected static function _signalHandler($signo, $pid = null, $status = null)
-    {
-        switch ($signo) {
-            case SIGTERM:
-            case SIGINT:
-                self::$_stop = true;
-                break;
-            case SIGCHLD:
-                if (!$pid) {
-                    $pid = pcntl_waitpid(-1, $status, WNOHANG);
-                }
-                while ($pid > 0) {
-                    foreach (self::$_workers as $workerUid => $workerData) {
-                        if (($key = array_search($pid, $workerData['pids'])) !== false) {
-                            unset(self::$_workers[$workerUid]['pids'][$key]);
-                        }
-                    }
-                    $pid = pcntl_waitpid(-1, $status, WNOHANG);
-                }
-                break;
-        }
-    }
-
-    /**
      * Logs one or several messages into daemon log file.
      * @param array|string $messages
      */
@@ -236,6 +207,35 @@ class Controller extends \yii\console\Controller
     }
 
     /**
+     * PNCTL signal handler.
+     * @param $signo
+     * @param $pid
+     * @param $status
+     */
+    public static function signalHandler($signo, $pid = null, $status = null)
+    {
+        switch ($signo) {
+            case SIGTERM:
+            case SIGINT:
+                self::$_stop = true;
+                break;
+            case SIGCHLD:
+                if (!$pid) {
+                    $pid = pcntl_waitpid(-1, $status, WNOHANG);
+                }
+                while ($pid > 0) {
+                    foreach (self::$_workers as $workerUid => $workerData) {
+                        if (($key = array_search($pid, $workerData['pids'])) !== false) {
+                            unset(self::$_workers[$workerUid]['pids'][$key]);
+                        }
+                    }
+                    $pid = pcntl_waitpid(-1, $status, WNOHANG);
+                }
+                break;
+        }
+    }
+
+    /**
      * The daemon start command.
      * @return int
      */
@@ -252,9 +252,9 @@ class Controller extends \yii\console\Controller
                 return self::EXIT_CODE_ERROR;
             }
             if ($this->_meetRequerements) {
-                pcntl_signal(SIGTERM, ['inpassor\daemon\Controller', '_signalHandler']);
-                pcntl_signal(SIGINT, ['inpassor\daemon\Controller', '_signalHandler']);
-                pcntl_signal(SIGCHLD, ['inpassor\daemon\Controller', '_signalHandler']);
+                pcntl_signal(SIGTERM, ['inpassor\daemon\Controller', 'signalHandler']);
+                pcntl_signal(SIGINT, ['inpassor\daemon\Controller', 'signalHandler']);
+                pcntl_signal(SIGCHLD, ['inpassor\daemon\Controller', 'signalHandler']);
             }
         } else {
             $message .= 'Service is already running!';

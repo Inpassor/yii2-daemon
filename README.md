@@ -72,6 +72,7 @@ ln -s /path_to_your_project/vendor/inpassor/yii2-daemon/yiid /etc/init.d/yiid
 Description=yiid
  
 [Service]
+User=www-data
 PIDFile=/path_to_your_project/runtime/daemon/daemon.pid
 Type=forking
 KillMode=process
