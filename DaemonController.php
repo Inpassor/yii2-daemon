@@ -38,8 +38,7 @@ class DaemonController extends \yii\console\Controller
     public $stdout = null;
     public $stderr = null;
 
-    public $workers = [];
-
+    protected $_workers = [];
     protected $_meetRequerements = false;
     protected $_pid = false;
     protected $_stop = false;
@@ -92,9 +91,9 @@ class DaemonController extends \yii\console\Controller
                     $pid = pcntl_waitpid(-1, $status, WNOHANG);
                 }
                 while ($pid > 0) {
-                    foreach ($this->workers as $workerUid => $worker) {
-                        if (($key = array_search($pid, $worker->pids)) !== false) {
-                            unset($worker->pids[$key]);
+                    foreach ($this->_workers as $workerUid => $workerData) {
+                        if (($key = array_search($pid, $workerData['pids'])) !== false) {
+                            unset($this->_workers[$workerUid]['pids'][$key]);
                         }
                     }
                     $pid = pcntl_waitpid(-1, $status, WNOHANG);
@@ -160,23 +159,26 @@ class DaemonController extends \yii\console\Controller
         if (!file_exists($this->workersdir)) {
             return false;
         }
-        $workers = FileHelper::findFiles($this->workersdir, [
+        $workerFiles = FileHelper::findFiles($this->workersdir, [
             'only' => ['*Worker.php'],
         ]);
-        if (!$workers) {
+        if (!$workerFiles) {
             return false;
         }
-        foreach ($workers as $workerFileName) {
+        foreach ($workerFiles as $workerFileName) {
             $workerUid = str_replace('Worker.php', '', $workerFileName);
             $workerClass = 'app\\daemon\\' . pathinfo($workerFileName, PATHINFO_FILENAME);
-            $worker = new $workerClass([
-                'daemon' => $this,
-                'uid' => $workerUid,
-            ]);
+            $worker = new $workerClass();
             if (!$worker->active) {
                 continue;
             }
-            $this->workers[$workerUid] = $worker;
+            $this->_workers[$workerUid] = [
+                'class' => $workerClass,
+                'maxProcesses' => $worker->maxProcesses,
+                'delay' => $worker->delay,
+                'tick' => 1,
+                'pids' => [],
+            ];
         }
         return true;
     }
@@ -285,29 +287,31 @@ class DaemonController extends \yii\console\Controller
         $this->_log($message);
 
         while (!$this->_stop) {
-            foreach ($this->workers as $workerUid => $worker) {
-                if ($worker->tick % $worker->delay === 0) {
-                    $worker->tick = 0;
+            foreach ($this->_workers as $workerUid => $workerData) {
+                if ($workerData['tick'] % $workerData['delay'] === 0) {
+                    $workerData['tick'] = 0;
                     $pid = 0;
                     if ($this->_meetRequerements) {
-                        $pid = pcntl_fork();
+                        $pid = (count($workerData['pids']) < $workerData['maxProcesses']) ? pcntl_fork() : -2;
                     }
                     if ($pid == -1) {
                         $this->_log('Could not launch worker "' . $workerUid . '"');
+                    } elseif ($pid == -2) {
+                        $this->_log('Max processes exceed for launch worker "' . $workerUid . '"');
                     } elseif ($pid) {
-                        $worker->pids[] = $pid;
+                        $this->_workers[$workerUid]['pids'][] = $pid;
                     } else {
-                        if ($this->_meetRequerements && count($worker->pids) >= $worker->maxProcesses) {
-                            //$this->_log('Max processes exceed for launch worker "' . $workerUid . '"');
-                            return self::EXIT_CODE_NORMAL;
-                        }
+                        $worker = new $workerData['class']([
+                            'daemon' => $this,
+                            'uid' => $workerUid,
+                        ]);
                         $worker->run();
                         if ($this->_meetRequerements) {
                             return self::EXIT_CODE_NORMAL;
                         }
                     }
                 }
-                $worker->tick++;
+                $this->_workers[$workerUid]['tick']++;
             }
             sleep(1);
         }

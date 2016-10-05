@@ -38,8 +38,6 @@ class DaemonWorker extends \yii\base\Object
      */
     public $daemon = null;
     public $uid = '';
-    public $pids = [];
-    public $tick = 1;
 
     /**
      * Logs one or several messages into daemon log file.
