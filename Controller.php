@@ -146,7 +146,7 @@ class Controller extends \yii\console\Controller
                 'class' => $workerClass,
                 'maxProcesses' => $worker->maxProcesses,
                 'delay' => $worker->delay,
-                'tick' => 1,
+                'tick' => 0,
                 'pids' => [],
             ];
         }
@@ -286,7 +286,7 @@ class Controller extends \yii\console\Controller
 
         while (!self::$_stop) {
             foreach (self::$_workers as $workerUid => $workerData) {
-                if ($workerData['tick'] % $workerData['delay'] === 0) {
+                if ($workerData['tick'] >= $workerData['delay']) {
                     $workerData['tick'] = 0;
                     $pid = 0;
                     if ($this->_meetRequerements) {
@@ -311,9 +311,9 @@ class Controller extends \yii\console\Controller
                         }
                     }
                 }
-                self::$_workers[$workerUid]['tick']++;
+                self::$_workers[$workerUid]['tick'] += 0.5;
             }
-            sleep(1);
+            usleep(500000);
         }
         return self::EXIT_CODE_NORMAL;
     }
