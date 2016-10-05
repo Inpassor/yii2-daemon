@@ -298,7 +298,7 @@ class DaemonController extends \yii\console\Controller
                     } elseif ($pid) {
                         $worker->pids[] = $pid;
                     } else {
-                        if ($this->_meetRequerements && count($worker->pids) >= $worker->maxProcesses) {
+                        if ($this->_meetRequerements && count($worker->pids) > $worker->maxProcesses) {
                             $this->_log('Max processes exceed for launch worker "' . $workerUid . '"');
                             return self::EXIT_CODE_NORMAL;
                         }
