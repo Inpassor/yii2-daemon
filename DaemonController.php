@@ -10,7 +10,6 @@
 
 namespace inpassor\daemon;
 
-use Yii;
 use \yii\helpers\FileHelper;
 
 set_time_limit(0);
@@ -156,7 +155,7 @@ class DaemonController extends \yii\console\Controller
     protected function _getWorkers()
     {
         if (!$this->workersdir) {
-            $this->workersdir = Yii::getAlias('@app/daemon');
+            $this->workersdir = \Yii::getAlias('@app/daemon');
         }
         if (!file_exists($this->workersdir)) {
             return false;
@@ -188,8 +187,8 @@ class DaemonController extends \yii\console\Controller
     public function init()
     {
         $this->_meetRequerements = extension_loaded('pcntl') && extension_loaded('posix');
-        $this->_filesDir = Yii::getAlias('@runtime/daemon');
-        $this->_logDir = Yii::getAlias('@runtime/logs');
+        $this->_filesDir = \Yii::getAlias('@runtime/daemon');
+        $this->_logDir = \Yii::getAlias('@runtime/logs');
         if (!file_exists($this->_filesDir)) {
             FileHelper::createDirectory($this->_filesDir, 0755, true);
         }
@@ -298,8 +297,8 @@ class DaemonController extends \yii\console\Controller
                     } elseif ($pid) {
                         $worker->pids[] = $pid;
                     } else {
-                        if ($this->_meetRequerements && count($worker->pids) > $worker->maxProcesses) {
-                            $this->_log('Max processes exceed for launch worker "' . $workerUid . '"');
+                        if ($this->_meetRequerements && count($worker->pids) >= $worker->maxProcesses) {
+                            //$this->_log('Max processes exceed for launch worker "' . $workerUid . '"');
                             return self::EXIT_CODE_NORMAL;
                         }
                         $worker->run();
