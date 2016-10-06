@@ -98,7 +98,7 @@ class Worker extends \yii\base\Object
     {
         $this->_redirectIO();
         $this->_meetRequerements = extension_loaded('pcntl') && extension_loaded('posix');
-        parent::init();
+        parent::__construct($config);
     }
 
 }
