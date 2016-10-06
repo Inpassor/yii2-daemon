@@ -5,7 +5,7 @@
  * @author Inpassor <inpassor@yandex.com>
  * @link https://github.com/Inpassor/yii2-daemon
  *
- * @version 0.1.1 (2016.10.06)
+ * @version 0.1.2 (2016.10.06)
  */
 
 namespace inpassor\daemon;
@@ -43,6 +43,8 @@ class Controller extends \yii\console\Controller
      * @var bool Clear log files on start.
      */
     public $clearLogs = false;
+
+    public static $workersPids = [];
 
     protected static $_stop = false;
     protected static $_workersData = [];
@@ -156,7 +158,7 @@ class Controller extends \yii\console\Controller
             }
             self::$_workersData[$workerUid] = $workerConfig;
             self::$_workersData[$workerUid]['tick'] = 0;
-            self::$_workersData[$workerUid]['pids'] = [];
+            self::$workersPids[$workerUid] = [];
         }
     }
 
@@ -230,9 +232,9 @@ class Controller extends \yii\console\Controller
                     $pid = pcntl_waitpid(-1, $status, WNOHANG);
                 }
                 while ($pid > 0) {
-                    foreach (self::$_workersData as $workerUid => $workerData) {
-                        if (($key = array_search($pid, $workerData['pids'])) !== false) {
-                            unset(self::$_workersData[$workerUid]['pids'][$key]);
+                    foreach (self::$workersPids as $workerUid => $workerPids) {
+                        if (($key = array_search($pid, $workerPids)) !== false) {
+                            unset(self::$workersPids[$workerUid][$key]);
                         }
                     }
                     $pid = pcntl_waitpid(-1, $status, WNOHANG);
@@ -306,14 +308,17 @@ class Controller extends \yii\console\Controller
                     self::$_workersData[$workerUid]['tick'] = 0;
                     $pid = 0;
                     if ($this->_meetRequerements) {
-                        $pid = (count($workerData['pids']) < $workerData['maxProcesses']) ? pcntl_fork() : -2;
+                        if (!isset(self::$workersPids[$workerUid])) {
+                            self::$workersPids[$workerUid] = [];
+                        }
+                        $pid = (count(self::$workersPids[$workerUid]) < $workerData['maxProcesses']) ? pcntl_fork() : -2;
                     }
                     if ($pid == -1) {
                         $this->_log('Could not launch worker "' . $workerUid . '"');
                     } elseif ($pid == -2) {
                         $this->_log('Max processes exceed for launch worker "' . $workerUid . '"');
                     } elseif ($pid) {
-                        self::$_workersData[$workerUid]['pids'][] = $pid;
+                        self::$workersPids[$workerUid][] = $pid;
                     } else {
                         $worker = new $workerData['class'](array_merge($workerData, [
                             'uid' => $workerUid,
