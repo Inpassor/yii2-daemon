@@ -47,6 +47,7 @@ class Controller extends \yii\console\Controller
     public static $workersPids = [];
 
     protected static $_stop = false;
+    protected static $_workersConfig = [];
     protected static $_workersData = [];
 
     protected $_meetRequerements = false;
@@ -156,8 +157,13 @@ class Controller extends \yii\console\Controller
                     continue;
                 }
             }
-            self::$_workersData[$workerUid] = $workerConfig;
-            self::$_workersData[$workerUid]['tick'] = 0;
+            self::$_workersData[$workerUid] = [
+                'class' => $workerConfig['class'],
+                'delay' => $workerConfig['delay'],
+                'tick' => 0,
+            ];
+            unset($workerConfig['class']);
+            self::$_workersConfig[$workerUid] = $workerConfig;
             self::$workersPids[$workerUid] = [];
         }
     }
@@ -320,7 +326,7 @@ class Controller extends \yii\console\Controller
                     } elseif ($pid) {
                         self::$workersPids[$workerUid][] = $pid;
                     } else {
-                        $worker = new $workerData['class'](array_merge($workerData, [
+                        $worker = new $workerData['class'](array_merge(isset(self::$_workersConfig[$workerUid]) ? self::$_workersConfig[$workerUid] : [], [
                             'uid' => $workerUid,
                             'logFile' => $this->_logFile,
                             'errorLogFile' => $this->_errorLogFile,
