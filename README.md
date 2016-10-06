@@ -32,7 +32,7 @@ composer require inpassor/yii2-daemon
             'clearLogs' => false, // Clear log files on start.
             'workersMap' => [
                 'watcher' => [
-                    'class' => 'inpassor\daemon\WatcherWorker',
+                    'class' => 'inpassor\daemon\workers\Watcher',
                     'active' => true, // If set to false, worker is disabled.
                     'maxProcesses' => 1, // The number of maximum processes of the daemon worker running at once.
                     'delay' => 60, // The time, in seconds, the timer should delay in between executions of the daemon worker.
@@ -43,7 +43,17 @@ composer require inpassor/yii2-daemon
     ],
 ```
 
-Note that watchers config variables, defined in daemon's workersMap config section
+Parameter "class" is the only one that required. It is possible to set
+"workersMap" section as array:
+```
+    'workersMap' => [
+        'watcher' => 'inpassor\daemon\workers\Watcher',
+        ...
+    ],
+```
+In this case all the parameters will be taken from worker class.
+
+Note that watchers config variables, defined in daemon's "workersMap" config section
 have priority over the corresponding properties of worker class.
 
 3) Create the daemon workers. All the workers classes should extend

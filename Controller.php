@@ -132,6 +132,11 @@ class Controller extends \yii\console\Controller
     protected function _getWorkers()
     {
         foreach ($this->workersMap as $workerUid => $workerConfig) {
+            if (is_string($workerConfig)) {
+                $workerConfig = [
+                    'class' => $workerConfig,
+                ];
+            }
             if (
                 !isset($workerConfig['class'])
                 || (isset($workerConfig['active']) && !$workerConfig['active'])
