@@ -159,6 +159,7 @@ class Controller extends \yii\console\Controller
             }
             self::$_workersData[$workerUid] = [
                 'class' => $workerConfig['class'],
+                'maxProcesses' => $workerConfig['maxProcesses'],
                 'delay' => $workerConfig['delay'],
                 'tick' => 0,
             ];
