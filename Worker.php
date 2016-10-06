@@ -7,7 +7,7 @@
  * @author Inpassor <inpassor@yandex.com>
  * @link https://github.com/Inpassor/yii2-daemon
  *
- * @version 0.1 (2016.10.01)
+ * @version 0.1.1 (2016.10.06)
  *
  * All the daemon workes should extend this class.
  * The name of the daemon worker should start with the worker string UID and end with "Worker".
@@ -19,7 +19,7 @@ class Worker extends \yii\base\Object
 {
 
     /**
-     * @var bool
+     * @var bool If set to false, worker is disabled. This var take effect only if set in daemon's workersMap config.
      */
     public $active = true;
 
@@ -33,34 +33,35 @@ class Worker extends \yii\base\Object
      */
     public $delay = 60;
 
-    public $meetRequerements = false;
     public $uid = '';
-    public $stdin = null;
-    public $stdout = null;
-    public $stderr = null;
     public $logFile = '';
     public $errorLogFile = '';
+
+    protected $_meetRequerements = false;
+    protected $_stdin = null;
+    protected $_stdout = null;
+    protected $_stderr = null;
 
     /**
      * Redirects I/O sreams to the log files.
      */
     protected function _redirectIO()
     {
-        if (!$this->meetRequerements) {
+        if (!$this->_meetRequerements) {
             return;
         }
         if (defined('STDIN') && is_resource(STDIN)) {
             fclose(STDIN);
-            $this->stdin = fopen('/dev/null', 'r');
+            $this->_stdin = fopen('/dev/null', 'r');
         }
         if (defined('STDOUT') && is_resource(STDOUT)) {
             fclose(STDOUT);
-            $this->stdout = fopen($this->logFile, 'a');
+            $this->_stdout = fopen($this->logFile, 'a');
         }
         if (defined('STDERR') && is_resource(STDERR)) {
             ini_set('error_log', $this->errorLogFile);
             fclose(STDERR);
-            $this->stderr = fopen($this->errorLogFile, 'a');
+            $this->_stderr = fopen($this->errorLogFile, 'a');
         }
     }
 
@@ -75,8 +76,8 @@ class Worker extends \yii\base\Object
         }
         foreach ($messages as $message) {
             $_message = date('d.m.Y H:i:s') . ' - ' . $message . PHP_EOL;
-            if ($this->stdout && is_resource($this->stdout)) {
-                fwrite($this->stdout, $_message);
+            if ($this->_stdout && is_resource($this->_stdout)) {
+                fwrite($this->_stdout, $_message);
             } else {
                 echo $_message;
             }
@@ -96,6 +97,7 @@ class Worker extends \yii\base\Object
     public function __construct($config = [])
     {
         $this->_redirectIO();
+        $this->_meetRequerements = extension_loaded('pcntl') && extension_loaded('posix');
         parent::init();
     }
 

@@ -10,7 +10,7 @@ Once runned stays in memory and launches workers.
 Every worker process have individual number of processes running at once.
 
 Please note that for normal daemon work php extensions pcntl and posix
-are required. If running on Windows system no forking available.
+are required. If running on Windows system, no forking available.
 Also daemon main process stays in console until it break (Ctrl-C).
 
 ### Install
@@ -26,18 +26,27 @@ composer require inpassor/yii2-daemon
         ...
         'daemon' => [
             'class' => 'inpassor\daemon\Controller',
+            'uid' => 'daemon', // The daemon UID. Givind daemons different UIDs makes possible to run several daemons.
+            'pidDir' => '@runtime/daemon', // PID file directory.
+            'logsDir' => '@runtime/logs', // Log files directory.
+            'clearLogs' => false, // Clear log files on start.
+            'workersMap' => [
+                'watcher' => [
+                    'class' => 'inpassor\daemon\WatcherWorker',
+                    'active' => true, // If set to false, worker is disabled.
+                    'maxProcesses' => 1, // The number of maximum processes of the daemon worker running at once.
+                    'delay' => 60, // The time, in seconds, the timer should delay in between executions of the daemon worker.
+                ],
+                ...
+            ],
         ],
     ],
 ```
 
-3) Create directory in your application root named "@app/daemon"
-for daemon workers classes.
-Notice that the daemon takes all the classes over this directory that
-names ends with "Worker.php" and have property "active" set to true.
-Workers are loaded during daemon start. So if you add one more worker,
-daemon should be restarted to run this worker.
+Note that watchers config variables, defined in daemon's workersMap config section
+have priority over the corresponding properties of worker class.
 
-4) Create the daemon workers. All the workers classes should extend
+3) Create the daemon workers. All the workers classes should extend
 inpassor\daemon\Worker :
 ```
 class MyWorker extends inpassor\daemon\Worker
