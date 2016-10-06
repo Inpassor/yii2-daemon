@@ -20,7 +20,7 @@ class Controller extends \yii\console\Controller
 {
 
     /**
-     * @var string The daemon UID. Givind daemons different UIDs makes possible to run several daemons.
+     * @var string The daemon UID. Giving daemons different UIDs makes possible to run several daemons.
      */
     public $uid = 'daemon';
 

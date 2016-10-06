@@ -26,7 +26,7 @@ composer require inpassor/yii2-daemon
         ...
         'daemon' => [
             'class' => 'inpassor\daemon\Controller',
-            'uid' => 'daemon', // The daemon UID. Givind daemons different UIDs makes possible to run several daemons.
+            'uid' => 'daemon', // The daemon UID. Giving daemons different UIDs makes possible to run several daemons.
             'pidDir' => '@runtime/daemon', // PID file directory.
             'logsDir' => '@runtime/logs', // Log files directory.
             'clearLogs' => false, // Clear log files on start.
