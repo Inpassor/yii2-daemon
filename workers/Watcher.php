@@ -6,8 +6,6 @@
  *
  * @author Inpassor <inpassor@yandex.com>
  * @link https://github.com/Inpassor/yii2-daemon
- *
- * @version 0.1.2 (2016.10.06)
  */
 
 namespace inpassor\daemon\workers;

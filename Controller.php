@@ -5,7 +5,7 @@
  * @author Inpassor <inpassor@yandex.com>
  * @link https://github.com/Inpassor/yii2-daemon
  *
- * @version 0.1.2 (2016.10.06)
+ * @version 0.1.3 (2016.10.07)
  */
 
 namespace inpassor\daemon;
@@ -383,6 +383,19 @@ class Controller extends \yii\console\Controller
         }
         echo 'Service status: not running!' . PHP_EOL;
         return self::EXIT_CODE_ERROR;
+    }
+
+    /**
+     * The daemon boobs.
+     * @return int
+     */
+    public function actionBoobs()
+    {
+        if ($boobs = FileHelper::findFiles(__DIR__ . DIRECTORY_SEPARATOR . 'boobs', ['only' => ['boobs*.txt']])) {
+            $b = $boobs[mt_rand(0, count($boobs) - 1)];
+            echo file_get_contents($b);
+        }
+        return self::EXIT_CODE_NORMAL;
     }
 
 }
