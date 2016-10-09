@@ -1,6 +1,6 @@
 {
     "name": "inpassor/yii2-daemon",
-    "description": "The simple daemon extension for the Yii framework",
+    "description": "The simple daemon extension for the Yii 2 framework",
     "keywords": [
         "yii2",
         "daemon"
