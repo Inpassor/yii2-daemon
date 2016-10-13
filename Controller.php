@@ -12,6 +12,10 @@ namespace inpassor\daemon;
 
 use \yii\helpers\FileHelper;
 
+set_time_limit(0);
+ignore_user_abort(true);
+declare(ticks = 1);
+
 class Controller extends \yii\console\Controller
 {
 
@@ -162,7 +166,7 @@ class Controller extends \yii\console\Controller
                 'class' => $workerConfig['class'],
                 'maxProcesses' => $workerConfig['maxProcesses'],
                 'delay' => $workerConfig['delay'],
-                'tick' => 0,
+                'tick' => 1,
             ];
             unset($workerConfig['class']);
             self::$_workersConfig[$workerUid] = $workerConfig;
