@@ -3,17 +3,19 @@ The simple daemon extension for the Yii 2 framework
 
 Author: Inpassor <inpassor@yandex.com>
 
-Link: https://github.com/Inpassor/yii2-daemon
+GitHub repository: https://github.com/Inpassor/yii2-daemon
 
-This daemon is console application of Yii2.
+This daemon is console application of Yii2, implementing multitasking
+processes on PHP.
 Once runned stays in memory and launches workers.
-Every worker process have individual number of processes running at once.
+Every worker process have individual number of max processes running at once.
+Inside the worker you can access any of Yii 2 resources. 
 
-Please note that for normal daemon work php extensions pcntl and posix
+Please note that for normal daemon work php extensions **pcntl** and **posix**
 are required. If running on Windows system, no forking available.
 Also daemon main process stays in console until it break (Ctrl-C).
 
-### Install
+## Installation
 
 1) Add package to your project using composer:
 ```
@@ -73,7 +75,7 @@ class MyWorker extends inpassor\daemon\Worker
 }
 ```
 
-### Run as system service for Ubuntu / Debian
+## Run as system service for Ubuntu / Debian
 
 1) Make sure that you have "yii" console application launcher under your
 project directory. Check if "yii" file is executable.

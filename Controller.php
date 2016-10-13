@@ -5,16 +5,12 @@
  * @author Inpassor <inpassor@yandex.com>
  * @link https://github.com/Inpassor/yii2-daemon
  *
- * @version 0.1.3 (2016.10.07)
+ * @version 0.1.4 (2016.10.13)
  */
 
 namespace inpassor\daemon;
 
 use \yii\helpers\FileHelper;
-
-set_time_limit(0);
-ignore_user_abort(true);
-declare(ticks = 1);
 
 class Controller extends \yii\console\Controller
 {
@@ -316,7 +312,7 @@ class Controller extends \yii\console\Controller
 
         while (!self::$_stop) {
             foreach (self::$_workersData as $workerUid => $workerData) {
-                if ($workerData['tick'] >= $workerData['delay']) {
+                if ($workerData['tick'] % $workerData['delay'] === 0) {
                     self::$_workersData[$workerUid]['tick'] = 0;
                     $pid = 0;
                     if ($this->_meetRequerements) {
@@ -343,9 +339,9 @@ class Controller extends \yii\console\Controller
                         }
                     }
                 }
-                self::$_workersData[$workerUid]['tick'] += 0.5;
+                self::$_workersData[$workerUid]['tick']++;
             }
-            usleep(1000000);
+            sleep(1);
         }
         return self::EXIT_CODE_NORMAL;
     }
