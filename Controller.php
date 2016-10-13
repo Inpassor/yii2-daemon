@@ -312,9 +312,12 @@ class Controller extends \yii\console\Controller
         $this->_redirectIO();
         $this->_log($message);
 
+        $previousSec = null;
+
         while (!self::$_stop) {
+            $currentSec = date('s');
             foreach (self::$_workersData as $workerUid => $workerData) {
-                if ($workerData['tick'] >= $workerData['delay']) {
+                if ($workerData['tick'] >= $workerData['delay'] && $currentSec !== $previousSec) {
                     self::$_workersData[$workerUid]['tick'] = 0;
                     $pid = 0;
                     if ($this->_meetRequerements) {
@@ -344,6 +347,7 @@ class Controller extends \yii\console\Controller
                 self::$_workersData[$workerUid]['tick'] += 0.5;
             }
             usleep(1000000);
+            $previousSec = $currentSec;
         }
         return self::EXIT_CODE_NORMAL;
     }
