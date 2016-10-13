@@ -10,6 +10,8 @@
 
 namespace inpassor\daemon\workers;
 
+declare(ticks = 1);
+
 class Watcher extends \inpassor\daemon\Worker
 {
 

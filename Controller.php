@@ -12,8 +12,6 @@ namespace inpassor\daemon;
 
 use \yii\helpers\FileHelper;
 
-set_time_limit(0);
-ignore_user_abort(true);
 declare(ticks = 1);
 
 class Controller extends \yii\console\Controller
@@ -316,7 +314,7 @@ class Controller extends \yii\console\Controller
 
         while (!self::$_stop) {
             foreach (self::$_workersData as $workerUid => $workerData) {
-                if ($workerData['tick'] % $workerData['delay'] === 0) {
+                if ($workerData['tick'] >= $workerData['delay']) {
                     self::$_workersData[$workerUid]['tick'] = 0;
                     $pid = 0;
                     if ($this->_meetRequerements) {
@@ -343,9 +341,9 @@ class Controller extends \yii\console\Controller
                         }
                     }
                 }
-                self::$_workersData[$workerUid]['tick']++;
+                self::$_workersData[$workerUid]['tick'] += 0.5;
             }
-            sleep(1);
+            usleep(1000000);
         }
         return self::EXIT_CODE_NORMAL;
     }
