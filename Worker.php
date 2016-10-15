@@ -7,7 +7,7 @@
  * @author Inpassor <inpassor@yandex.com>
  * @link https://github.com/Inpassor/yii2-daemon
  *
- * @version 0.1.4 (2016.10.13)
+ * @version 0.1.5 (2016.10.15)
  *
  * All the daemon workes should extend this class.
  * The name of the daemon worker should start with the worker string UID and end with "Worker".

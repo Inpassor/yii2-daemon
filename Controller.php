@@ -5,7 +5,7 @@
  * @author Inpassor <inpassor@yandex.com>
  * @link https://github.com/Inpassor/yii2-daemon
  *
- * @version 0.1.4 (2016.10.13)
+ * @version 0.1.5 (2016.10.15)
  */
 
 namespace inpassor\daemon;
@@ -317,7 +317,8 @@ class Controller extends \yii\console\Controller
         while (!self::$_stop) {
             $currentSec = date('s');
             foreach (self::$_workersData as $workerUid => $workerData) {
-                if ($workerData['tick'] >= $workerData['delay'] && $currentSec !== $previousSec) {
+                $tickPlus = $currentSec === $previousSec ? 0 : 1;
+                if ($workerData['tick'] >= $workerData['delay'] && $tickPlus) {
                     self::$_workersData[$workerUid]['tick'] = 0;
                     $pid = 0;
                     if ($this->_meetRequerements) {
@@ -344,9 +345,9 @@ class Controller extends \yii\console\Controller
                         }
                     }
                 }
-                self::$_workersData[$workerUid]['tick'] += 0.5;
+                self::$_workersData[$workerUid]['tick'] += $tickPlus;
             }
-            usleep(1000000);
+            usleep(500000);
             $previousSec = $currentSec;
         }
         return self::EXIT_CODE_NORMAL;
