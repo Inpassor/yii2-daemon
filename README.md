@@ -1,6 +1,10 @@
 The simple daemon extension for the Yii 2 framework
 ===================================================
 
+[![Latest Stable Version](https://poser.pugx.org/inpassor/yii2-daemon/version)](https://packagist.org/packages/inpassor/yii2-daemon)
+[![Total Downloads](https://poser.pugx.org/inpassor/yii2-daemon/downloads)](https://packagist.org/packages/inpassor/yii2-daemon)
+[![License](https://poser.pugx.org/inpassor/yii2-daemon/license)](https://packagist.org/packages/inpassor/yii2-daemon)
+
 Author: Inpassor <inpassor@yandex.com>
 
 GitHub repository: https://github.com/Inpassor/yii2-daemon
