@@ -5,14 +5,12 @@
  * @author Inpassor <inpassor@yandex.com>
  * @link https://github.com/Inpassor/yii2-daemon
  *
- * @version 0.1.6 (2016.11.01)
+ * @version 0.1.7 (2017.01.27)
  */
 
 namespace inpassor\daemon;
 
 use \yii\helpers\FileHelper;
-
-declare(ticks = 1);
 
 class Controller extends \yii\console\Controller
 {
@@ -312,40 +310,46 @@ class Controller extends \yii\console\Controller
         $this->_redirectIO();
         $this->_log($message);
 
+        if ($this->_meetRequerements) {
+            declare(ticks = 1);
+        };
+
         $previousSec = null;
 
         while (!self::$_stop) {
             $currentSec = date('s');
-            foreach (self::$_workersData as $workerUid => $workerData) {
-                $tickPlus = $currentSec === $previousSec ? 0 : 1;
-                if ($workerData['tick'] >= $workerData['delay'] && $tickPlus) {
-                    self::$_workersData[$workerUid]['tick'] = 0;
-                    $pid = 0;
-                    if ($this->_meetRequerements) {
-                        if (!isset(self::$workersPids[$workerUid])) {
-                            self::$workersPids[$workerUid] = [];
-                        }
-                        $pid = (count(self::$workersPids[$workerUid]) < $workerData['maxProcesses']) ? pcntl_fork() : -2;
-                    }
-                    if ($pid == -1) {
-                        $this->_log('Could not launch worker "' . $workerUid . '"');
-                    } elseif ($pid == -2) {
-                        $this->_log('Max processes exceed for launch worker "' . $workerUid . '"');
-                    } elseif ($pid) {
-                        self::$workersPids[$workerUid][] = $pid;
-                    } else {
-                        $worker = new $workerData['class'](array_merge(isset(self::$_workersConfig[$workerUid]) ? self::$_workersConfig[$workerUid] : [], [
-                            'uid' => $workerUid,
-                            'logFile' => $this->_logFile,
-                            'errorLogFile' => $this->_errorLogFile,
-                        ]));
-                        $worker->run();
+            $tickPlus = $currentSec === $previousSec ? 0 : 1;
+            if ($tickPlus) {
+                foreach (self::$_workersData as $workerUid => $workerData) {
+                    if ($workerData['tick'] >= $workerData['delay']) {
+                        self::$_workersData[$workerUid]['tick'] = 0;
+                        $pid = 0;
                         if ($this->_meetRequerements) {
-                            return self::EXIT_CODE_NORMAL;
+                            if (!isset(self::$workersPids[$workerUid])) {
+                                self::$workersPids[$workerUid] = [];
+                            }
+                            $pid = (count(self::$workersPids[$workerUid]) < $workerData['maxProcesses']) ? pcntl_fork() : -2;
+                        }
+                        if ($pid == -1) {
+                            $this->_log('Could not launch worker "' . $workerUid . '"');
+                        } elseif ($pid == -2) {
+                            $this->_log('Max processes exceed for launch worker "' . $workerUid . '"');
+                        } elseif ($pid) {
+                            self::$workersPids[$workerUid][] = $pid;
+                        } else {
+                            $worker = new $workerData['class'](array_merge(isset(self::$_workersConfig[$workerUid]) ? self::$_workersConfig[$workerUid] : [], [
+                                'uid' => $workerUid,
+                                'logFile' => $this->_logFile,
+                                'errorLogFile' => $this->_errorLogFile,
+                            ]));
+                            $worker->run();
+                            if ($this->_meetRequerements) {
+                                return self::EXIT_CODE_NORMAL;
+                            }
                         }
                     }
+                    self::$_workersData[$workerUid]['tick'] += $tickPlus;
                 }
-                self::$_workersData[$workerUid]['tick'] += $tickPlus;
             }
             usleep(500000);
             $previousSec = $currentSec;
