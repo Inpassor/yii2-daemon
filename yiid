@@ -27,7 +27,7 @@ require($vendorPath . '/yiisoft/yii2/Yii.php');
 
 $application = new yii\console\Application([
     'id' => 'yii-console',
-    'basePath' => __DIR__ . '/../../../console',
+    'basePath' => $vendorPath . '/yiisoft/yii2/console',
     'controllerNamespace' => 'yii\console\controllers',
 ]);
 $application->setVendorPath($vendorPath);
