@@ -18,17 +18,4 @@ $_SERVER['argv'] = array_merge(
     ['daemon/' . $_SERVER['argv'][1]],
     array_slice($_SERVER['argv'], 2)
 );
-
-defined('YII_DEBUG') or define('YII_DEBUG', false);
-$autoload = __DIR__ . '/../../autoload.php';
-$vendorPath = dirname($autoload);
-require($autoload);
-require($vendorPath . '/yiisoft/yii2/Yii.php');
-
-$application = new yii\console\Application([
-    'id' => 'yii-console',
-    'basePath' => $vendorPath . '/yiisoft/yii2/console',
-    'controllerNamespace' => 'yii\console\controllers',
-]);
-$application->setVendorPath($vendorPath);
-exit($application->run());
+require(__DIR__ . '/../../../yii');
