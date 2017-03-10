@@ -11,8 +11,8 @@ GitHub repository: https://github.com/Inpassor/yii2-daemon
 
 This daemon is console application of Yii2, implementing multitasking
 processes on PHP.
-Once runned stays in memory and launches workers.
-Every worker process have individual number of max processes running at once.
+Once ran stays in memory and launches workers.
+Every worker process has an individual number of max processes running at once.
 Inside the worker you can access any of Yii 2 resources. 
 
 Please note that for normal daemon work php extensions **pcntl** and **posix**
@@ -50,7 +50,7 @@ composer require inpassor/yii2-daemon
 ```
 
 Parameter "class" is the only one that required. It is possible to set
-"workersMap" section as array:
+"workersMap" section as an array:
 ```
     'workersMap' => [
         'watcher' => 'inpassor\daemon\workers\Watcher',
@@ -60,9 +60,9 @@ Parameter "class" is the only one that required. It is possible to set
 In this case all the parameters will be taken from worker class.
 
 Note that watchers config variables, defined in daemon's "workersMap" config section
-have priority over the corresponding properties of worker class.
+have priority over the corresponding properties of the worker class.
 
-3) Create the daemon workers. All the workers classes should extend
+3) Create the daemon workers. All the worker classes should extend
 inpassor\daemon\Worker :
 ```
 class MyWorker extends inpassor\daemon\Worker
@@ -81,8 +81,8 @@ class MyWorker extends inpassor\daemon\Worker
 
 ## Run as system service for Ubuntu / Debian
 
-1) Make sure that you have "yii" console application launcher under your
-project directory. Check if "yii" file is executable.
+1) Make sure that you have "Yii" console application launcher under your
+project directory. Check if "Yii" file is executable.
 
 2) Check if "vendor/inpassor/yii2-daemon/yiid" file is executable.
 
@@ -108,7 +108,7 @@ ExecStop=/path_to_your_project/vendor/inpassor/yii2-daemon/yiid stop
 WantedBy=multi-user.target
 ```
 
-5) Run in root console:
+5) Run in a root console:
 ```
 systemctl enable yiid.service
 service yiid start

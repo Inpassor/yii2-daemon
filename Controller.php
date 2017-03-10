@@ -5,7 +5,7 @@
  * @author Inpassor <inpassor@yandex.com>
  * @link https://github.com/Inpassor/yii2-daemon
  *
- * @version 0.1.7 (2017.01.27)
+ * @version 0.2.0 (2017.03.10)
  */
 
 namespace inpassor\daemon;
@@ -337,6 +337,7 @@ class Controller extends \yii\console\Controller
                         } elseif ($pid) {
                             self::$workersPids[$workerUid][] = $pid;
                         } else {
+                            /** @var \inpassor\daemon\Worker $worker */
                             $worker = new $workerData['class'](array_merge(isset(self::$_workersConfig[$workerUid]) ? self::$_workersConfig[$workerUid] : [], [
                                 'uid' => $workerUid,
                                 'logFile' => $this->_logFile,
@@ -355,6 +356,15 @@ class Controller extends \yii\console\Controller
             $previousSec = $currentSec;
         }
         return self::EXIT_CODE_NORMAL;
+    }
+
+    /**
+     * The daemon start command. Calls actionStart.
+     * @return int
+     */
+    public function actionIndex()
+    {
+        return $this->actionStart();
     }
 
     /**
