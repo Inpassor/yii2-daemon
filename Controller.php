@@ -5,7 +5,7 @@
  * @author Inpassor <inpassor@yandex.com>
  * @link https://github.com/Inpassor/yii2-daemon
  *
- * @version 0.2.0 (2017.03.10)
+ * @version 0.2.3 (2017.03.29)
  */
 
 namespace inpassor\daemon;
@@ -14,6 +14,11 @@ use \yii\helpers\FileHelper;
 
 class Controller extends \yii\console\Controller
 {
+
+    /**
+     * @inheritdoc
+     */
+    public $defaultAction = 'start';
 
     /**
      * @var string The daemon UID. Giving daemons different UIDs makes possible to run several daemons.
@@ -356,15 +361,6 @@ class Controller extends \yii\console\Controller
             $previousSec = $currentSec;
         }
         return self::EXIT_CODE_NORMAL;
-    }
-
-    /**
-     * The daemon start command. Calls actionStart.
-     * @return int
-     */
-    public function actionIndex()
-    {
-        return $this->actionStart();
     }
 
     /**

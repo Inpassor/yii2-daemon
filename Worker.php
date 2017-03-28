@@ -7,7 +7,7 @@
  * @author Inpassor <inpassor@yandex.com>
  * @link https://github.com/Inpassor/yii2-daemon
  *
- * @version 0.2.0 (2017.03.10)
+ * @version 0.2.3 (2017.03.29)
  *
  * All the daemon workes should extend this class.
  */
