@@ -30,6 +30,7 @@ class Worker extends \yii\base\Object
      */
     public $delay = 60;
 
+    public $uid = '';
     public $logFile = '';
     public $errorLogFile = '';
 

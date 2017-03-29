@@ -5,7 +5,7 @@
  * @author Inpassor <inpassor@yandex.com>
  * @link https://github.com/Inpassor/yii2-daemon
  *
- * @version 0.2.4
+ * @version 0.2.5
  */
 
 namespace inpassor\daemon;
@@ -18,7 +18,7 @@ class Controller extends \yii\console\Controller
     /**
      * @var string The daemon version.
      */
-    public $version = '0.2.4';
+    public $version = '0.2.5';
 
     /**
      * @inheritdoc
