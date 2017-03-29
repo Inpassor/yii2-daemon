@@ -5,7 +5,7 @@
  * @author Inpassor <inpassor@yandex.com>
  * @link https://github.com/Inpassor/yii2-daemon
  *
- * @version 0.3.0
+ * @version 0.3.1
  */
 
 namespace inpassor\daemon;
@@ -18,7 +18,7 @@ class Controller extends \yii\console\Controller
     /**
      * @var string The daemon version.
      */
-    public $version = '0.3.0';
+    public $version = '0.3.1';
 
     /**
      * @inheritdoc
@@ -70,10 +70,7 @@ class Controller extends \yii\console\Controller
      */
     protected function _redirectIO()
     {
-        if (!$this->_meetRequerements) {
-            return;
-        }
-        if (defined('STDIN') && is_resource(STDIN)) {
+        if ($this->_meetRequerements && defined('STDIN') && is_resource(STDIN)) {
             fclose(STDIN);
             $this->_stdin = fopen('/dev/null', 'r');
         }
@@ -291,7 +288,7 @@ class Controller extends \yii\console\Controller
             }
         }
 
-        $message = 'Starting Yii 2 Daemon v' . $this->version . '... ';
+        $message = 'Starting Yii 2 Daemon ' . $this->version . '... ';
 
         if ($this->_getPid() === false) {
             $this->_getWorkers();
@@ -390,7 +387,7 @@ class Controller extends \yii\console\Controller
      */
     public function actionStop($redirectIO = true)
     {
-        $message = 'Stopping Yii 2 Daemon v' . $this->version . '... ';
+        $message = 'Stopping Yii 2 Daemon ' . $this->version . '... ';
         $result = static::EXIT_CODE_NORMAL;
         if ($this->_getPid() !== false) {
             $this->_killPid();
@@ -424,10 +421,10 @@ class Controller extends \yii\console\Controller
     public function actionStatus()
     {
         if ($this->_getPid()) {
-            echo 'Yii 2 Daemon v' . $this->version . ' status: running.' . PHP_EOL;
+            echo 'Yii 2 Daemon ' . $this->version . ' status: running.' . PHP_EOL;
             return static::EXIT_CODE_NORMAL;
         }
-        echo 'Yii 2 Daemon v' . $this->version . ' status: not running!' . PHP_EOL;
+        echo 'Yii 2 Daemon ' . $this->version . ' status: not running!' . PHP_EOL;
         return static::EXIT_CODE_ERROR;
     }
 

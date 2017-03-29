@@ -45,10 +45,7 @@ class Worker extends \yii\base\Object
      */
     protected function _redirectIO()
     {
-        if (!$this->_meetRequerements) {
-            return;
-        }
-        if (defined('STDIN') && is_resource(STDIN)) {
+        if ($this->_meetRequerements && defined('STDIN') && is_resource(STDIN)) {
             fclose(STDIN);
             $this->_stdin = fopen('/dev/null', 'r');
         }
