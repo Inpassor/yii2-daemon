@@ -28,34 +28,34 @@ composer require inpassor/yii2-daemon
 
 2) Add the daemon command to console config file in "controllerMap" section:
 ```
-    'controllerMap' => [
-        ...
-        'daemon' => [
-            'class' => 'inpassor\daemon\Controller',
-            'uid' => 'daemon', // The daemon UID. Giving daemons different UIDs makes possible to run several daemons.
-            'pidDir' => '@runtime/daemon', // PID file directory.
-            'logsDir' => '@runtime/logs', // Log files directory.
-            'clearLogs' => false, // Clear log files on start.
-            'workersMap' => [
-                'watcher' => [
-                    'class' => 'inpassor\daemon\workers\Watcher',
-                    'active' => true, // If set to false, worker is disabled.
-                    'maxProcesses' => 1, // The number of maximum processes of the daemon worker running at once.
-                    'delay' => 60, // The time, in seconds, the timer should delay in between executions of the daemon worker.
-                ],
-                ...
+'controllerMap' => [
+    ...
+    'daemon' => [
+        'class' => 'inpassor\daemon\Controller',
+        'uid' => 'daemon', // The daemon UID. Giving daemons different UIDs makes possible to run several daemons.
+        'pidDir' => '@runtime/daemon', // PID file directory.
+        'logsDir' => '@runtime/logs', // Log files directory.
+        'clearLogs' => false, // Clear log files on start.
+        'workersMap' => [
+            'watcher' => [
+                'class' => 'inpassor\daemon\workers\Watcher',
+                'active' => true, // If set to false, worker is disabled.
+                'maxProcesses' => 1, // The number of maximum processes of the daemon worker running at once.
+                'delay' => 60, // The time, in seconds, the timer should delay in between executions of the daemon worker.
             ],
+            ...
         ],
     ],
+],
 ```
 
 Parameter "class" is the only one that required. It is possible to set
 "workersMap" section as an array:
 ```
-    'workersMap' => [
-        'watcher' => 'inpassor\daemon\workers\Watcher',
-        ...
-    ],
+'workersMap' => [
+    'watcher' => 'inpassor\daemon\workers\Watcher',
+    ...
+],
 ```
 In this case all the parameters will be taken from worker class.
 

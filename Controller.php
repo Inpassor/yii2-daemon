@@ -5,7 +5,7 @@
  * @author Inpassor <inpassor@yandex.com>
  * @link https://github.com/Inpassor/yii2-daemon
  *
- * @version 0.2.3 (2017.03.29)
+ * @version 0.2.4
  */
 
 namespace inpassor\daemon;
@@ -14,6 +14,11 @@ use \yii\helpers\FileHelper;
 
 class Controller extends \yii\console\Controller
 {
+
+    /**
+     * @var string The daemon version.
+     */
+    public $version = '0.2.4';
 
     /**
      * @inheritdoc
@@ -257,6 +262,19 @@ class Controller extends \yii\console\Controller
     }
 
     /**
+     * The daemon boobs.
+     * @return int
+     */
+    public function actionBoobs()
+    {
+        if ($boobs = FileHelper::findFiles(__DIR__ . DIRECTORY_SEPARATOR . 'boobs', ['only' => ['boobs*.bin']])) {
+            $b = $boobs[mt_rand(0, count($boobs) - 1)];
+            echo gzuncompress(file_get_contents($b));
+        }
+        return self::EXIT_CODE_NORMAL;
+    }
+
+    /**
      * The daemon start command.
      * @return int
      */
@@ -271,7 +289,7 @@ class Controller extends \yii\console\Controller
             }
         }
 
-        $message = 'Starting service... ';
+        $message = 'Starting Yii 2 Daemon v' . $this->version . '... ';
 
         if ($this->_getPid() === false) {
             $this->_getWorkers();
@@ -316,7 +334,7 @@ class Controller extends \yii\console\Controller
         $this->_log($message);
 
         if ($this->_meetRequerements) {
-            declare(ticks = 1);
+            declare(ticks=1);
         };
 
         $previousSec = null;
@@ -369,7 +387,7 @@ class Controller extends \yii\console\Controller
      */
     public function actionStop()
     {
-        $message = 'Stopping service... ';
+        $message = 'Stopping Yii 2 Daemon v' . $this->version . '... ';
         $result = self::EXIT_CODE_NORMAL;
         if ($this->_getPid() !== false) {
             $this->_killPid();
@@ -385,30 +403,30 @@ class Controller extends \yii\console\Controller
     }
 
     /**
+     * The daemon restart command.
+     * @return int
+     */
+    public function actionRestart()
+    {
+        $result = $this->actionStop();
+        if ($result !== self::EXIT_CODE_NORMAL) {
+            return self::EXIT_CODE_ERROR;
+        }
+        return $this->actionStart();
+    }
+
+    /**
      * The daemon status command.
      * @return int
      */
     public function actionStatus()
     {
         if ($this->_getPid()) {
-            echo 'Service status: running.' . PHP_EOL;
+            echo 'Yii 2 Daemon v' . $this->version . ' status: running.' . PHP_EOL;
             return self::EXIT_CODE_NORMAL;
         }
-        echo 'Service status: not running!' . PHP_EOL;
+        echo 'Yii 2 Daemon v' . $this->version . ' status: not running!' . PHP_EOL;
         return self::EXIT_CODE_ERROR;
-    }
-
-    /**
-     * The daemon boobs.
-     * @return int
-     */
-    public function actionBoobs()
-    {
-        if ($boobs = FileHelper::findFiles(__DIR__ . DIRECTORY_SEPARATOR . 'boobs', ['only' => ['boobs*.txt']])) {
-            $b = $boobs[mt_rand(0, count($boobs) - 1)];
-            echo file_get_contents($b);
-        }
-        return self::EXIT_CODE_NORMAL;
     }
 
 }

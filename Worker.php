@@ -7,8 +7,6 @@
  * @author Inpassor <inpassor@yandex.com>
  * @link https://github.com/Inpassor/yii2-daemon
  *
- * @version 0.2.3 (2017.03.29)
- *
  * All the daemon workes should extend this class.
  */
 
@@ -18,7 +16,7 @@ class Worker extends \yii\base\Object
 {
 
     /**
-     * @var bool If set to false, worker is disabled. This var take effect only if set in daemon's workersMap config.
+     * @var bool If set to false, worker is disabled. This parameter take effect only if set in daemon's workersMap config.
      */
     public $active = true;
 
@@ -32,7 +30,6 @@ class Worker extends \yii\base\Object
      */
     public $delay = 60;
 
-    public $uid = '';
     public $logFile = '';
     public $errorLogFile = '';
 
@@ -95,8 +92,8 @@ class Worker extends \yii\base\Object
      */
     public function __construct($config = [])
     {
-        $this->_redirectIO();
         $this->_meetRequerements = extension_loaded('pcntl') && extension_loaded('posix');
+        $this->_redirectIO();
         parent::__construct($config);
     }
 
