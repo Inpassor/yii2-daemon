@@ -95,10 +95,10 @@ class Worker extends \yii\base\Object
     public function __construct($config = [])
     {
         $this->_meetRequerements = extension_loaded('pcntl') && extension_loaded('posix');
+        parent::__construct($config);
         if ($this->redirectIO) {
             $this->_redirectIO();
         }
-        parent::__construct($config);
     }
 
 }
