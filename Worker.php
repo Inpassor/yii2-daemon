@@ -30,6 +30,7 @@ class Worker extends \yii\base\Object
      */
     public $delay = 60;
 
+    public $redirectIO = true;
     public $uid = '';
     public $logFile = '';
     public $errorLogFile = '';
@@ -94,7 +95,9 @@ class Worker extends \yii\base\Object
     public function __construct($config = [])
     {
         $this->_meetRequerements = extension_loaded('pcntl') && extension_loaded('posix');
-        $this->_redirectIO();
+        if ($this->redirectIO) {
+            $this->_redirectIO();
+        }
         parent::__construct($config);
     }
 

@@ -5,7 +5,7 @@
  * @author Inpassor <inpassor@yandex.com>
  * @link https://github.com/Inpassor/yii2-daemon
  *
- * @version 0.2.6
+ * @version 0.2.7
  */
 
 namespace inpassor\daemon;
@@ -18,7 +18,7 @@ class Controller extends \yii\console\Controller
     /**
      * @var string The daemon version.
      */
-    public $version = '0.2.6';
+    public $version = '0.2.7';
 
     /**
      * @inheritdoc
@@ -153,7 +153,9 @@ class Controller extends \yii\console\Controller
                 !isset($workerConfig['delay'])
                 || !isset($workerConfig['maxProcesses'])
             ) {
-                $worker = new $workerConfig['class']();
+                $worker = new $workerConfig['class']([
+                    'redirectIO' => false,
+                ]);
                 if (!isset($workerConfig['delay'])) {
                     $workerConfig['delay'] = $worker->delay;
                 }
