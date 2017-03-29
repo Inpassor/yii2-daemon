@@ -5,7 +5,7 @@
  * @author Inpassor <inpassor@yandex.com>
  * @link https://github.com/Inpassor/yii2-daemon
  *
- * @version 0.2.8
+ * @version 0.3.0
  */
 
 namespace inpassor\daemon;
@@ -18,7 +18,7 @@ class Controller extends \yii\console\Controller
     /**
      * @var string The daemon version.
      */
-    public $version = '0.2.8';
+    public $version = '0.3.0';
 
     /**
      * @inheritdoc
@@ -385,9 +385,10 @@ class Controller extends \yii\console\Controller
 
     /**
      * The daemon stop command.
+     * @param bool $redirectIO
      * @return int
      */
-    public function actionStop()
+    public function actionStop($redirectIO = true)
     {
         $message = 'Stopping Yii 2 Daemon v' . $this->version . '... ';
         $result = static::EXIT_CODE_NORMAL;
@@ -399,8 +400,10 @@ class Controller extends \yii\console\Controller
             $result = static::EXIT_CODE_ERROR;
         }
         echo $message . PHP_EOL;
-        $this->_redirectIO();
-        $this->_log($message);
+        if ($redirectIO) {
+            $this->_redirectIO();
+            $this->_log($message);
+        }
         return $result;
     }
 
@@ -410,10 +413,7 @@ class Controller extends \yii\console\Controller
      */
     public function actionRestart()
     {
-        $result = $this->actionStop();
-        if ($result !== static::EXIT_CODE_NORMAL) {
-            return static::EXIT_CODE_ERROR;
-        }
+        $this->actionStop(false);
         return $this->actionStart();
     }
 
