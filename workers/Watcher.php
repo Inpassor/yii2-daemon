@@ -2,7 +2,7 @@
 /**
  * This file is part of The simple daemon extension for the Yii 2 framework
  *
- * The daemon worker watcher. Checks if daemon workers alive and remove dead.
+ * This worker run once per minute and checks if workers of the daemon alive and removes a dead ones from the memory.
  *
  * @author Inpassor <inpassor@yandex.com>
  * @link https://github.com/Inpassor/yii2-daemon
