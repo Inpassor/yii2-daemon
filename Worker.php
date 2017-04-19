@@ -30,35 +30,9 @@ class Worker extends \yii\base\Object
      */
     public $delay = 60;
 
-    public $redirectIO = true;
     public $uid = '';
     public $logFile = '';
     public $errorLogFile = '';
-
-    protected $_meetRequerements = false;
-    protected $_stdin = null;
-    protected $_stdout = null;
-    protected $_stderr = null;
-
-    /**
-     * Redirects I/O sreams to the log files.
-     */
-    protected function _redirectIO()
-    {
-        if ($this->_meetRequerements && defined('STDIN') && is_resource(STDIN)) {
-            fclose(STDIN);
-            $this->_stdin = fopen('/dev/null', 'r');
-        }
-        if (defined('STDOUT') && is_resource(STDOUT)) {
-            fclose(STDOUT);
-            $this->_stdout = fopen($this->logFile, 'a');
-        }
-        if (defined('STDERR') && is_resource(STDERR)) {
-            ini_set('error_log', $this->errorLogFile);
-            fclose(STDERR);
-            $this->_stderr = fopen($this->errorLogFile, 'a');
-        }
-    }
 
     /**
      * Logs one or several messages into daemon log file.
@@ -70,20 +44,8 @@ class Worker extends \yii\base\Object
             $messages = [$messages];
         }
         foreach ($messages as $message) {
-            $_message = date('d.m.Y H:i:s') . ' - ' . $message . PHP_EOL;
-            if ($this->_stdout && is_resource($this->_stdout)) {
-                fwrite($this->_stdout, $_message);
-            } else {
-                echo $_message;
-            }
+            file_put_contents($this->logFile, date('d.m.Y H:i:s') . ' - ' . $message . PHP_EOL, FILE_APPEND | LOCK_EX);
         }
-    }
-
-    /**
-     * The daemon worker main action. It should be overriden in a child class.
-     */
-    public function run()
-    {
     }
 
     /**
@@ -91,11 +53,15 @@ class Worker extends \yii\base\Object
      */
     public function __construct($config = [])
     {
-        $this->_meetRequerements = extension_loaded('pcntl') && extension_loaded('posix');
         parent::__construct($config);
-        if ($this->redirectIO) {
-            $this->_redirectIO();
-        }
+        ini_set('error_log', $this->errorLogFile);
+    }
+
+    /**
+     * The daemon worker main action. It should be overriden in a child class.
+     */
+    public function run()
+    {
     }
 
 }

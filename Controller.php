@@ -5,7 +5,7 @@
  * @author Inpassor <inpassor@yandex.com>
  * @link https://github.com/Inpassor/yii2-daemon
  *
- * @version 0.3.1
+ * @version 0.3.2
  */
 
 namespace inpassor\daemon;
@@ -18,7 +18,7 @@ class Controller extends \yii\console\Controller
     /**
      * @var string The daemon version.
      */
-    public $version = '0.3.1';
+    public $version = '0.3.2';
 
     /**
      * @inheritdoc
@@ -61,29 +61,6 @@ class Controller extends \yii\console\Controller
     protected $_meetRequerements = false;
     protected $_pid = false;
     protected $_pidFile = null;
-    protected $_stdin = null;
-    protected $_stdout = null;
-    protected $_stderr = null;
-
-    /**
-     * Redirects I/O sreams to the log files.
-     */
-    protected function _redirectIO()
-    {
-        if ($this->_meetRequerements && defined('STDIN') && is_resource(STDIN)) {
-            fclose(STDIN);
-            $this->_stdin = fopen('/dev/null', 'r');
-        }
-        if (defined('STDOUT') && is_resource(STDOUT)) {
-            fclose(STDOUT);
-            $this->_stdout = fopen(static::$logFile, 'a');
-        }
-        if (defined('STDERR') && is_resource(STDERR)) {
-            ini_set('error_log', static::$errorLogFile);
-            fclose(STDERR);
-            $this->_stderr = fopen(static::$errorLogFile, 'a');
-        }
-    }
 
     /**
      * Logs one or several messages into daemon log file.
@@ -95,12 +72,7 @@ class Controller extends \yii\console\Controller
             $messages = [$messages];
         }
         foreach ($messages as $message) {
-            $_message = date('d.m.Y H:i:s') . ' - ' . $message . PHP_EOL;
-            if ($this->_stdout && is_resource($this->_stdout)) {
-                fwrite($this->_stdout, $_message);
-            } else {
-                echo $_message;
-            }
+            file_put_contents(static::$logFile, date('d.m.Y H:i:s') . ' - ' . $message . PHP_EOL, FILE_APPEND | LOCK_EX);
         }
     }
 
@@ -150,9 +122,7 @@ class Controller extends \yii\console\Controller
                 !isset($workerConfig['delay'])
                 || !isset($workerConfig['maxProcesses'])
             ) {
-                $worker = new $workerConfig['class']([
-                    'redirectIO' => false,
-                ]);
+                $worker = new $workerConfig['class']();
                 if (!isset($workerConfig['delay'])) {
                     $workerConfig['delay'] = $worker->delay;
                 }
@@ -206,6 +176,7 @@ class Controller extends \yii\console\Controller
         }
         static::$logFile = $this->logsDir . DIRECTORY_SEPARATOR . $this->uid . '.log';
         static::$errorLogFile = $this->logsDir . DIRECTORY_SEPARATOR . $this->uid . '_error.log';
+        ini_set('error_log', static::$errorLogFile);
         return true;
     }
 
@@ -295,7 +266,6 @@ class Controller extends \yii\console\Controller
             if (!static::$_workersData) {
                 $message .= 'No tasks found. Stopping!';
                 echo $message . PHP_EOL;
-                $this->_redirectIO();
                 $this->_log($message);
                 return static::EXIT_CODE_ERROR;
             }
@@ -307,7 +277,6 @@ class Controller extends \yii\console\Controller
         } else {
             $message .= 'Service is already running!';
             echo $message . PHP_EOL;
-            $this->_redirectIO();
             $this->_log($message);
             return static::EXIT_CODE_NORMAL;
         }
@@ -316,7 +285,6 @@ class Controller extends \yii\console\Controller
         if ($this->_pid == -1) {
             $message .= 'Could not start service!';
             echo $message . PHP_EOL;
-            $this->_redirectIO();
             $this->_log($message);
             return static::EXIT_CODE_ERROR;
         } elseif ($this->_pid) {
@@ -329,7 +297,6 @@ class Controller extends \yii\console\Controller
 
         $message .= 'OK.';
         echo $message . PHP_EOL;
-        $this->_redirectIO();
         $this->_log($message);
 
         if ($this->_meetRequerements) {
@@ -382,10 +349,9 @@ class Controller extends \yii\console\Controller
 
     /**
      * The daemon stop command.
-     * @param bool $redirectIO
      * @return int
      */
-    public function actionStop($redirectIO = true)
+    public function actionStop()
     {
         $message = 'Stopping Yii 2 Daemon ' . $this->version . '... ';
         $result = static::EXIT_CODE_NORMAL;
@@ -397,10 +363,7 @@ class Controller extends \yii\console\Controller
             $result = static::EXIT_CODE_ERROR;
         }
         echo $message . PHP_EOL;
-        if ($redirectIO) {
-            $this->_redirectIO();
-            $this->_log($message);
-        }
+        $this->_log($message);
         return $result;
     }
 
@@ -410,7 +373,7 @@ class Controller extends \yii\console\Controller
      */
     public function actionRestart()
     {
-        $this->actionStop(false);
+        $this->actionStop();
         return $this->actionStart();
     }
 
