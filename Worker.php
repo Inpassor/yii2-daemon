@@ -12,7 +12,7 @@
 
 namespace inpassor\daemon;
 
-class Worker extends \yii\base\Object
+class Worker extends \yii\base\BaseObject
 {
 
     /**
