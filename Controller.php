@@ -10,6 +10,7 @@
 
 namespace inpassor\daemon;
 
+use yii\helpers\ArrayHelper;
 use \yii\helpers\FileHelper;
 
 class Controller extends \yii\console\Controller
@@ -129,13 +130,7 @@ class Controller extends \yii\console\Controller
                 if (!isset($workerConfig['maxProcesses'])) {
                     $workerConfig['maxProcesses'] = $worker->maxProcesses;
                 }
-                if (!isset($workerConfig['active'])) {
-                    $workerConfig['active'] = $worker->active;
-                }
                 unset($worker);
-                if (!$workerConfig['active']) {
-                    continue;
-                }
             }
             static::$_workersData[$workerUid] = [
                 'class' => $workerConfig['class'],
@@ -143,7 +138,6 @@ class Controller extends \yii\console\Controller
                 'delay' => $workerConfig['delay'],
                 'tick' => 1,
             ];
-            unset($workerConfig['class']);
             static::$_workersConfig[$workerUid] = $workerConfig;
             static::$workersPids[$workerUid] = [];
         }
@@ -159,6 +153,7 @@ class Controller extends \yii\console\Controller
 
     /**
      * @inheritdoc
+     * @throws \yii\base\Exception
      */
     public function beforeAction($action)
     {
@@ -247,6 +242,7 @@ class Controller extends \yii\console\Controller
     /**
      * The daemon start command.
      * @return int
+     * @throws \yii\base\InvalidConfigException
      */
     public function actionStart()
     {
@@ -326,13 +322,15 @@ class Controller extends \yii\console\Controller
                         } elseif ($pid) {
                             static::$workersPids[$workerUid][] = $pid;
                         } else {
+
+                            $config = ArrayHelper::merge(static::$_workersConfig[$workerUid] ?? [], [
+                                'uid' => $workerUid
+                            ]);
+
                             /** @var \inpassor\daemon\Worker $worker */
-                            $worker = new $workerData['class'](array_merge(isset(static::$_workersConfig[$workerUid]) ? static::$_workersConfig[$workerUid] : [], [
-                                'uid' => $workerUid,
-                                'logFile' => static::$logFile,
-                                'errorLogFile' => static::$errorLogFile,
-                            ]));
+                            $worker = \Yii::createObject($config);
                             $worker->run();
+
                             if ($this->_meetRequerements) {
                                 return static::EXIT_CODE_NORMAL;
                             }
