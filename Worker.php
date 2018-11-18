@@ -38,15 +38,6 @@ class Worker extends \yii\base\BaseObject
 
     /**
      * @inheritdoc
-     */
-    public function __construct($config = [])
-    {
-        parent::__construct($config);
-        ini_set('error_log', $this->errorLogFile);
-    }
-
-    /**
-     * @inheritdoc
      * @throws \yii\base\Exception
      */
     public function init()
@@ -59,6 +50,7 @@ class Worker extends \yii\base\BaseObject
             if (!is_dir($errorLogDir)) {
                 FileHelper::createDirectory($errorLogDir);
             }
+            ini_set('error_log', $this->errorLogFile);
         }
         if ($this->logFile) {
             $this->logFile = \Yii::getAlias($this->logFile);
