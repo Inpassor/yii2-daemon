@@ -12,6 +12,8 @@
 
 namespace inpassor\daemon;
 
+use yii\helpers\FileHelper;
+
 class Worker extends \yii\base\BaseObject
 {
 
@@ -30,9 +32,41 @@ class Worker extends \yii\base\BaseObject
      */
     public $delay = 60;
 
-    public $uid = '';
-    public $logFile = '';
-    public $errorLogFile = '';
+    public $uid;
+    public $logFile;
+    public $errorLogFile;
+
+    /**
+     * @inheritdoc
+     * @throws \yii\base\Exception
+     */
+    public function init()
+    {
+        parent::init();
+
+        if ($this->errorLogFile) {
+            $this->errorLogFile = \Yii::getAlias($this->errorLogFile);
+            $errorLogDir = dirname($this->errorLogFile);
+            if (!is_dir($errorLogDir)) {
+                FileHelper::createDirectory($errorLogDir);
+            }
+            ini_set('error_log', $this->errorLogFile);
+        }
+        if ($this->logFile) {
+            $this->logFile = \Yii::getAlias($this->logFile);
+            $logDir = dirname($this->logFile);
+            if (!is_dir($logDir)) {
+                FileHelper::createDirectory($logDir);
+            }
+        }
+    }
+
+    /**
+     * The daemon worker main action. It should be overriden in a child class.
+     */
+    public function run()
+    {
+    }
 
     /**
      * Logs one or several messages into daemon log file.
@@ -47,21 +81,4 @@ class Worker extends \yii\base\BaseObject
             file_put_contents($this->logFile, date('d.m.Y H:i:s') . ' - ' . $message . PHP_EOL, FILE_APPEND | LOCK_EX);
         }
     }
-
-    /**
-     * @inheritdoc
-     */
-    public function __construct($config = [])
-    {
-        parent::__construct($config);
-        ini_set('error_log', $this->errorLogFile);
-    }
-
-    /**
-     * The daemon worker main action. It should be overriden in a child class.
-     */
-    public function run()
-    {
-    }
-
 }
